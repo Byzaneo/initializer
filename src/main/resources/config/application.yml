@@ -1,0 +1,13 @@
+info.project:
+  name: Initializer Service
+
+server.port: 8400
+
+spring:
+  application.name: initializer
+
+initializer:
+
+
+byzaneo:
+  billing.enabled: false

@@ -1,0 +1,15 @@
+info.project:
+  name: SMS Service
+
+server.port: 23000
+
+sms:
+  account-sid: ${SMS_ACCOUNT_SID}
+  service-sid: ${SMS_SERVICE_SID}
+  auth-token: ${SMS_AUTH_TOKEN}
+
+spring:
+  application.name: sms
+
+byzaneo:
+  billing.enabled: true

@@ -1,21 +1,28 @@
 package io.byzaneo.initializer.bean;
 
+import io.byzaneo.initializer.Constants;
+import io.byzaneo.initializer.facet.Facet;
+import io.byzaneo.initializer.facet.GitHub;
+import io.byzaneo.initializer.facet.Java;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Map;
 
+import static java.nio.file.Files.createTempDirectory;
 import static lombok.AccessLevel.NONE;
 
 @Data
-@Builder
+@Builder(toBuilder = true)
 @AllArgsConstructor
 @NoArgsConstructor
 @Document(collection = Project.COLLECTION)
@@ -25,10 +32,10 @@ public class Project {
 
     @Id
     private String id;
-
-    // - General -
+    @Builder.Default
+    private Instant date = Instant.now();
     @NonNull
-    @NotBlank
+    @Pattern(regexp = "^[a-z][a-z0-9_]*$")
     private String name;
 
     // - Security -
@@ -38,34 +45,52 @@ public class Project {
     @NonNull
     private String organization;
 
-    // - Facets -
-    @Singular
-    private Map<String, String> facets;
 
-    // - Working Directory -
+    // - Facets -
+    @NotNull
+    @Getter(NONE)
+    @Builder.Default
+    public Facet language = new Java();
+    @Getter(NONE)
+    @Builder.Default
+    public Facet repository = new GitHub();
+    public String management = "Maven";
+    public String assembly = "Docker";
+    public String registry = "Nexus";
+    public String integration = "Travis";
+    public String coverage = "CodeCov";
+    public String quality = "CodeClimate";
+    public String deployment = "Spinnaker";
+    public String front;
+
+    // - Transient -
+    @Transient
+    @Builder.Default
+    private Constants.Mode mode = Constants.Mode.create;
     @Transient
     @Getter(NONE)
-    private Path workDir;
+    private Path directory;
+    @Transient
+    @Singular
+    private Map<String, String> properties;
 
-//    public language,
-//    management,
-//    assembly,
-//    registry,
-//    integration,
-//    coverage,
-//    quality,
-//    deployment,
-//    ui,
-//    repository
-
-
-    public Path getWorkDir() {
+    public Path getDirectory() {
         try {
-            return workDir==null
-                    ? Files.createTempDirectory(this.name)
-                    : workDir;
+            return directory ==null
+                    ? createTempDirectory(this.name)
+                    : directory;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Facet> T getLanguage() {
+        return (T)language;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Facet> T getRepository() {
+        return (T)repository;
     }
 }

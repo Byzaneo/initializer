@@ -24,7 +24,7 @@ public class InitializerServiceTest {
         this.service.create(Project.builder()
                 .name("test")
                 .owner("tester")
-                .organization("it")
+                .organization("Byzaneo")
                 .build());
     }
 

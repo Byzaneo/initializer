@@ -2,16 +2,20 @@ package io.byzaneo.initializer;
 
 public class Constants {
 
-    public enum Facet {
-        language,
-        management,
-        assembly,
-        registry,
-        integration,
-        coverage,
-        quality,
-        deployment,
-        ui,
-        repository
+    public enum FacetFamily {
+        Language,
+        Management,
+        Assembly,
+        Registry,
+        Integration,
+        Coverage,
+        Quality,
+        Deployment,
+        Front,
+        Repository
+    }
+
+    public enum Mode {
+        create, update, delete;
     }
 }

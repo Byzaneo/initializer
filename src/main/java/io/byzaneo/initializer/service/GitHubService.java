@@ -43,10 +43,10 @@ public class GitHubService {
 
         log.info("Creating GitHub repository: {}/{}", organization, project.getName());
 
-//        this.repositoryService(project).createRepository(
-//                this.organization(project),
-//                this.createRepository(project)
-//        );
+        this.repositoryService(project).createRepository(
+                this.organization(project),
+                this.createRepository(project)
+        );
     }
 
     /* -- PRIVATE -- */

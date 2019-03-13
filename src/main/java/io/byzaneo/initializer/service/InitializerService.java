@@ -2,6 +2,7 @@ package io.byzaneo.initializer.service;
 
 import io.byzaneo.initializer.Constants;
 import io.byzaneo.initializer.bean.Project;
+import io.byzaneo.initializer.data.ProjectRepository;
 import io.byzaneo.initializer.event.*;
 import io.byzaneo.initializer.facet.Facet;
 import lombok.extern.slf4j.Slf4j;
@@ -19,8 +20,10 @@ import java.util.TreeSet;
 
 import static io.byzaneo.initializer.Constants.Mode.*;
 import static java.time.Duration.between;
+import static java.time.Duration.ofSeconds;
 import static java.time.Instant.now;
 import static java.util.Optional.ofNullable;
+import static org.apache.commons.lang.exception.ExceptionUtils.getRootCauseMessage;
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
 
@@ -28,10 +31,12 @@ import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
 @Service
 public class InitializerService {
     private final ApplicationEventPublisher publisher;
+    private final ProjectRepository projects;
     private Map<String, TreeSet<String>> facetNamesByFamilies;
 
-    public InitializerService(ApplicationEventPublisher publisher) {
+    public InitializerService(ApplicationEventPublisher publisher, ProjectRepository projects) {
         this.publisher = publisher;
+        this.projects = projects;
     }
 
     public Optional<Project> create(@NotNull Project project) {
@@ -92,7 +97,14 @@ public class InitializerService {
 */
 
     private Project publish(ProjectEvent event) {
-        this.publisher.publishEvent(event);
+        try {
+            this.publisher.publishEvent(event);
+        } catch (Exception e) {
+            // publishes project error event
+            // to be able to manage rollbacks
+            this.publisher.publishEvent(new ProjectErrorEvent(event, e));
+            throw e;
+        }
         return event.getProject();
     }
 
@@ -108,6 +120,15 @@ public class InitializerService {
                             .computeIfAbsent(facet.getFamily().toString(), s -> new TreeSet<>())
                             .add(name));
         log.info("Facets: {}", this.facetNamesByFamilies);
+    }
+
+    /* -- DATA -- */
+
+    @EventListener(condition = "#event.project.mode == T(io.byzaneo.initializer.Constants$Mode).create or #event.project.mode == T(io.byzaneo.initializer.Constants$Mode).update")
+    public void saveProject(@NotNull ProjectPersistencyEvent event) {
+        this.projects.save(event.getProject())
+                .blockOptional(ofSeconds(10))
+                .ifPresent(p -> log.info("Project saved: {}", p));
     }
 
     /* -- LOGS -- */
@@ -145,5 +166,12 @@ public class InitializerService {
                 event.getProject().getName(),
                 event.getName(),
                 between(event.getDate(), now()).toMillis());
+    }
+
+    @EventListener
+    public void error(@NotNull ProjectErrorEvent event) {
+        log.error("{} event error: {}",
+                event.getOrigin().getName(),
+                getRootCauseMessage(event.getError()));
     }
 }

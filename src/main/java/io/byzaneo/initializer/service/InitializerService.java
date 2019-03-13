@@ -23,7 +23,6 @@ import static java.time.Duration.between;
 import static java.time.Duration.ofSeconds;
 import static java.time.Instant.now;
 import static java.util.Optional.ofNullable;
-import static org.apache.commons.lang.exception.ExceptionUtils.getRootCauseMessage;
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
 
@@ -102,7 +101,7 @@ public class InitializerService {
         } catch (Exception e) {
             // publishes project error event
             // to be able to manage rollbacks
-            this.publisher.publishEvent(new ProjectErrorEvent(event, e));
+            this.publisher.publishEvent(new ErrorEvent(event, e));
             throw e;
         }
         return event.getProject();
@@ -169,9 +168,7 @@ public class InitializerService {
     }
 
     @EventListener
-    public void error(@NotNull ProjectErrorEvent event) {
-        log.error("{} event error: {}",
-                event.getOrigin().getName(),
-                getRootCauseMessage(event.getError()));
+    public void error(@NotNull ErrorEvent event) {
+        log.error(event.toString());
     }
 }

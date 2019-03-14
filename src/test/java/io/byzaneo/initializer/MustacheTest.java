@@ -3,14 +3,21 @@ package io.byzaneo.initializer;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Template;
 import io.byzaneo.initializer.bean.Project;
+import io.byzaneo.initializer.event.ProjectSourcesEvent;
+import io.byzaneo.initializer.facet.Java;
+import io.byzaneo.initializer.service.SourcesService;
 import org.junit.Test;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Map;
 
+import static java.nio.file.Files.exists;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class MustacheTest {
+
     @Test
     public void simple() {
         String text = "One, two, {{three}}. Three sir!";
@@ -21,21 +28,21 @@ public class MustacheTest {
     }
 
     @Test
-    public void projectContext() {
-        String text = "(#folder)(project.group)(/folder)";
-        Template tmpl = Mustache.compiler().withDelims("( )").compile(text);
-        final Object context = new Object() {
-            Project project = Project.builder()
-                    .name("test")
-                    .owner("tester@byzaneo.io")
-                    .organization("byzaneo")
-                    .build();
-            Mustache.Lambda folder = (fragment, writer) -> writer.write(fragment.execute().replace('.', File.separatorChar));
-        };
+    public void projectContext() throws IOException {
 
-        System.out.println(tmpl.execute(context));
-        assertEquals(
-                "io"+File.separatorChar+"byzaneo",
-                tmpl.execute(context));
+        final String namespace = "io.byzaneo.test";
+        final Project project = Project.builder()
+                .name("test")
+                .owner("tester@byzaneo.io")
+                .organization("byzaneo")
+                .language(new Java(namespace, "11"))
+                .build();
+
+        new SourcesService().onCreateSources(new ProjectSourcesEvent(project));
+
+        Files.walk(project.getDirectory())
+                .peek(System.out::println)
+                .forEach(p -> assertTrue(exists(p)));
     }
+
 }

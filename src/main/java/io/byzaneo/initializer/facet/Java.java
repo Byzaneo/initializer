@@ -4,6 +4,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.stereotype.Component;
 
+import javax.validation.constraints.NotNull;
+
 import static io.byzaneo.initializer.Constants.FacetFamily.Language;
 
 @Data
@@ -21,4 +23,14 @@ public class Java extends Facet {
         super(Language, FACET_NAME, "https://openjdk.java.net/");
     }
 
+    public Java(String namespace, @NotNull String version) {
+        this();
+        this.namespace = namespace;
+        this.version = version;
+    }
+
+    @Override
+    public String getTemplatesLocation() {
+        return FACET_NAME + "/" + this.version;
+    }
 }

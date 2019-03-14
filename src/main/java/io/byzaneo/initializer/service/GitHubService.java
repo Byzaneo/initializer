@@ -53,7 +53,8 @@ public class GitHubService {
 
     private RepositoryService repositoryService(Project project) {
         final GitHubClient client = new GitHubClient();
-        client.setOAuth2Token(ofNullable(project.<GitHub>getRepository().getToken()).orElse(this.defaultToken));
+        final GitHub github = (GitHub) project.getRepository();
+        client.setOAuth2Token(ofNullable(github.getToken()).orElse(this.defaultToken));
         return new RepositoryService(client);
     }
 

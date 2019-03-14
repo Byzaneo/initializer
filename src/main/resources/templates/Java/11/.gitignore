@@ -1,7 +1,7 @@
 /target/
 !.mvn/wrapper/maven-wrapper.jar
 
-### STS ###
+### Eclipse ###
 .apt_generated
 .classpath
 .factorypath

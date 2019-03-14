@@ -20,9 +20,12 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Stream.of;
 import static lombok.AccessLevel.NONE;
 
 @Data
@@ -58,20 +61,36 @@ public class Project {
     // - Facets -
 
     @NotNull
-    @Getter(NONE)
+//    @Getter(NONE)
     @Builder.Default
     public Facet language = new Java();
-    @Getter(NONE)
+//    @Getter(NONE)
     @Builder.Default
     public Facet repository = new GitHub();
-//    public String management = "Maven";
-//    public String assembly = "Docker";
-//    public String registry = "Nexus";
-//    public String integration = "Travis";
-//    public String coverage = "CodeCov";
-//    public String quality = "CodeClimate";
-//    public String deployment = "Spinnaker";
-//    public String front;
+//    @Getter(NONE)
+//    @Builder.Default
+    public Facet management; // = "Maven";
+//    @Getter(NONE)
+//    @Builder.Default
+    public Facet assembly; // = "Docker";
+//    @Getter(NONE)
+//    @Builder.Default
+    public Facet registry; // = "Nexus";
+//    @Getter(NONE)
+//    @Builder.Default
+    public Facet integration; // = "Travis";
+//    @Getter(NONE)
+//    @Builder.Default
+    public Facet coverage; // = "CodeCov";
+//    @Getter(NONE)
+//    @Builder.Default
+    public Facet quality; // = "CodeClimate";
+//    @Getter(NONE)
+//    @Builder.Default
+    public Facet deployment; // = "Spinnaker";
+//    @Getter(NONE)
+//    @Builder.Default
+    public Facet front;
 
     // - Transient -
 
@@ -94,13 +113,50 @@ public class Project {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public <T extends Facet> T getLanguage() {
-        return (T)language;
-    }
+//    @SuppressWarnings("unchecked")
+//    public <T extends Facet> T getLanguage() {
+//        return (T)language;
+//    }
+//    @SuppressWarnings("unchecked")
+//    public <T extends Facet> T getRepository() {
+//        return (T)repository;
+//    }
+//    @SuppressWarnings("unchecked")
+//    public <T extends Facet> T getManagement() {
+//        return (T)management;
+//    }
+//    @SuppressWarnings("unchecked")
+//    public <T extends Facet> T getAssembly() {
+//        return (T)assembly;
+//    }
+//    @SuppressWarnings("unchecked")
+//    public <T extends Facet> T getRegistry() {
+//        return (T)registry;
+//    }
+//    @SuppressWarnings("unchecked")
+//    public <T extends Facet> T getIntegration() {
+//        return (T)integration;
+//    }
+//    @SuppressWarnings("unchecked")
+//    public <T extends Facet> T getCoverage() {
+//        return (T)coverage;
+//    }
+//    @SuppressWarnings("unchecked")
+//    public <T extends Facet> T getQuality() {
+//        return (T)quality;
+//    }
+//    @SuppressWarnings("unchecked")
+//    public <T extends Facet> T getDeployment() {
+//        return (T)deployment;
+//    }
+//    @SuppressWarnings("unchecked")
+//    public <T extends Facet> T getFront() {
+//        return (T)front;
+//    }
 
-    @SuppressWarnings("unchecked")
-    public <T extends Facet> T getRepository() {
-        return (T)repository;
+    public Stream<Facet> facets() {
+        return of(language, repository, management, assembly, registry,
+                integration, coverage, quality, deployment, front)
+                .filter(Objects::nonNull);
     }
 }

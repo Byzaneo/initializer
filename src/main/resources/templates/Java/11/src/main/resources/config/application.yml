@@ -1,15 +1,13 @@
 info.project:
-  name: SMS Service
+  name: {{project.name}}
 
-server.port: 23000
+server.port: 8080
 
-sms:
-  account-sid: ${SMS_ACCOUNT_SID}
-  service-sid: ${SMS_SERVICE_SID}
-  auth-token: ${SMS_AUTH_TOKEN}
+{{project.name}}:
+  my.property: example
 
 spring:
-  application.name: sms
+  application.name: {{project.name}}
 
 byzaneo:
-  billing.enabled: true
+  billing.enabled: false

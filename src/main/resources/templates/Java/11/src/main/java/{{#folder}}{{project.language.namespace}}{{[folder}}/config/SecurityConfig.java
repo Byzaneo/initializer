@@ -1,4 +1,4 @@
-package io.byzaneo.initializer.config;
+package {{project.language.namespace}};
 
 import io.byzaneo.one.config.AbstractSecurityConfig;
 import io.byzaneo.one.config.ByzaneoProperties;
@@ -18,7 +18,7 @@ public class SecurityConfig extends AbstractSecurityConfig {
     @Override
     protected void authorizeRequests(ExpressionUrlAuthorizationConfigurer<HttpSecurity>.ExpressionInterceptUrlRegistry requests) {
         requests
-            .antMatchers("/api/**").hasAuthority("sms");
+            .antMatchers("/api/**").hasAuthority("{{project.name}}");
     }
 
 }

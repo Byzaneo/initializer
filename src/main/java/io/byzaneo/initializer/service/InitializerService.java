@@ -121,6 +121,10 @@ public class InitializerService {
         log.info("Facets: {}", this.facetNamesByFamilies);
     }
 
+    public Map<String, TreeSet<String>> getFacetNamesByFamilies() {
+        return facetNamesByFamilies;
+    }
+
     /* -- DATA -- */
 
     @EventListener(condition = "#event.project.mode == T(io.byzaneo.initializer.Constants$Mode).create or #event.project.mode == T(io.byzaneo.initializer.Constants$Mode).update")

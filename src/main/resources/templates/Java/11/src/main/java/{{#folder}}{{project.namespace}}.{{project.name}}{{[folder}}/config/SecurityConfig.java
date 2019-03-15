@@ -1,4 +1,4 @@
-package {{project.language.namespace}};
+package {{project.namespace}}.{{project.name}}.config;
 
 import io.byzaneo.one.config.AbstractSecurityConfig;
 import io.byzaneo.one.config.ByzaneoProperties;

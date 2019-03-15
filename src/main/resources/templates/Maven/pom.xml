@@ -9,30 +9,28 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>sms</artifactId>
+{{#project}}
+    <artifactId>{{name}}</artifactId>
+    <groupId>{{namespace}}</groupId>
+    <version>{{management.version}}</version>
     <packaging>war</packaging>
-    <name>SMS</name>
+    <name>{{#uppercase}}{{name}}{{/uppercase}}</name>
+    {{#description}}
+    <description>{{description}}</description>
+    {{/description}}
+{{/project}}
 
     <properties>
         <one.service.disabled>false</one.service.disabled>
-        <twilio.version>7.24.2</twilio.version>
-        <guava.version>20.0</guava.version>
+{{#project.front}}
+        <one.application.disabled>true</one.application.disabled>
+{{/project.front}}
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>io.byzaneo</groupId>
             <artifactId>byzaneo-one-starter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.twilio.sdk</groupId>
-            <artifactId>twilio</artifactId>
-            <version>${twilio.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
         </dependency>
         <!-- * TEST * -->
         <dependency>

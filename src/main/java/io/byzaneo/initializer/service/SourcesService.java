@@ -11,6 +11,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.io.*;
 import java.nio.file.Path;
@@ -50,12 +51,15 @@ public class SourcesService {
     }
 
     private void generateSources(Context context, Facet facet) {
+        log.info("{}: {} sources generation", context.project.getName(), facet.getName());
+
         final Path directory = context.project.getDirectory();
         final String templateLocation = "classpath:/templates/"+ facet.getTemplatesLocation()+"/";
         final String root = Optional.of(RESOLVER.getResource(templateLocation))
                     .filter(Resource::exists)
                     .map(this::resourcePath)
                     .orElseThrow(() -> new RuntimeException("Source templates not found at "+templateLocation));
+
         try (final Stream<Resource> templates =
                      stream(RESOLVER.getResources(templateLocation + "**/*"))) {
             templates
@@ -103,6 +107,8 @@ public class SourcesService {
         final Project project;
         final String capitalizedName;
         final Lambda folder = (fragment, writer) -> writer.write(fragment.execute().replace('.', '/'));
+        final Lambda uppercase = (fragment, writer) -> writer.write(fragment.execute().toUpperCase());
+        final Lambda capitalize = (fragment, writer) -> writer.write(StringUtils.capitalize(fragment.execute()));
 
         private Context(Project project) {
             this.project = project;

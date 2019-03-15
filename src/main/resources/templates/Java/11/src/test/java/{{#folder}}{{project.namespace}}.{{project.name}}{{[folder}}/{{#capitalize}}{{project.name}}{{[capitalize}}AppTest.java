@@ -1,4 +1,4 @@
-package {{project.language.namespace}};
+package {{project.namespace}}.{{project.name}}.test;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -11,7 +11,7 @@ import static io.byzaneo.one.Constants.PROFILE_TEST;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @ActiveProfiles(PROFILE_TEST)
-public class {{capitalizedName}}AppTest {
+public class {{#capitalize}}{{project.name}}{{/capitalize}}AppTest {
 
     @Test
     public void contextLoads() {

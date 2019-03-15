@@ -4,6 +4,7 @@ import io.byzaneo.initializer.Constants.Mode;
 import io.byzaneo.initializer.facet.Facet;
 import io.byzaneo.initializer.facet.GitHub;
 import io.byzaneo.initializer.facet.Java;
+import io.byzaneo.initializer.facet.Maven;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
@@ -24,7 +25,6 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
-import static java.util.Optional.ofNullable;
 import static java.util.stream.Stream.of;
 import static lombok.AccessLevel.NONE;
 
@@ -34,7 +34,7 @@ import static lombok.AccessLevel.NONE;
 @NoArgsConstructor
 @Document(collection = Project.COLLECTION)
 @CompoundIndexes({
-        @CompoundIndex(name = "name_unique", unique = true, def = "{'name' : 1, 'owner' : 1}")
+        @CompoundIndex(name = "name_unique", unique = true, def = "{'name' : 1, 'organization' : 1}")
 })
 public class Project {
 
@@ -46,8 +46,13 @@ public class Project {
     private Instant date = Instant.now();
     @NonNull
     @Indexed
+    @NotBlank
     @Pattern(regexp = "^[a-z][a-z0-9_]*$")
     private String name;
+    @NotBlank
+    @Pattern(regexp = "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+[0-9a-z_]$")
+    private String namespace;
+    private String description;
 
     // - Security -
 
@@ -68,8 +73,8 @@ public class Project {
     @Builder.Default
     public Facet repository = new GitHub();
 //    @Getter(NONE)
-//    @Builder.Default
-    public Facet management; // = "Maven";
+    @Builder.Default
+    public Facet management = new Maven();
 //    @Getter(NONE)
 //    @Builder.Default
     public Facet assembly; // = "Docker";
@@ -106,8 +111,9 @@ public class Project {
 
     public Path getDirectory() {
         try {
-            return ofNullable(directory)
-                    .orElse(directory = createTempDirectory(this.name));
+            return directory==null
+                    ? directory = createTempDirectory(this.name)
+                    : directory;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

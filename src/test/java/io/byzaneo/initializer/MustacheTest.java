@@ -30,12 +30,12 @@ public class MustacheTest {
     @Test
     public void projectContext() throws IOException {
 
-        final String namespace = "io.byzaneo.test";
         final Project project = Project.builder()
                 .name("test")
+                .namespace("io.byzaneo")
                 .owner("tester@byzaneo.io")
                 .organization("byzaneo")
-                .language(new Java(namespace, "11"))
+                .language(new Java("11"))
                 .build();
 
         new SourcesService().onCreateSources(new ProjectSourcesEvent(project));

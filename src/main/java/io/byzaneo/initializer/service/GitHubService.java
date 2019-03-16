@@ -1,6 +1,5 @@
 package io.byzaneo.initializer.service;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.byzaneo.initializer.bean.Project;
 import io.byzaneo.initializer.event.ProjectRepositoryEvent;
 import io.byzaneo.initializer.facet.GitHub;
@@ -11,7 +10,6 @@ import org.eclipse.egit.github.core.service.RepositoryService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
-import org.springframework.data.annotation.Transient;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -23,14 +21,10 @@ import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 @Service
 public class GitHubService {
 
-    @Transient
-    @JsonIgnore
-    @Value("${initializer.services.github.token}")
+    @Value("${initializer.github.token}")
     private String defaultToken;
 
-    @Transient
-    @JsonIgnore
-    @Value("${initializer.services.github.organization}")
+    @Value("${initializer.github.organization}")
     private String defaultOrganization;
 
     /* -- EVENTS -- */
@@ -39,34 +33,36 @@ public class GitHubService {
     @Order(HIGHEST_PRECEDENCE + 10)
     public void createReposioty(ProjectRepositoryEvent event) throws IOException {
         final Project project = event.getProject();
-        final String organization = organization(project);
+        final GitHub github = (GitHub) project.getRepository();
+        final String organization = organization(github);
 
         log.info("Creating GitHub repository: {}/{}", organization, project.getName());
 
-//        this.repositoryService(project).createRepository(
-//                this.organization(project),
+        // TODO puts organization in properties
+
+//        this.repositoryService(github).createRepository(
+//                organization,
 //                this.createRepository(project)
 //        );
     }
 
     /* -- PRIVATE -- */
 
-    private RepositoryService repositoryService(Project project) {
+    private RepositoryService repositoryService(GitHub github) {
         final GitHubClient client = new GitHubClient();
-        final GitHub github = (GitHub) project.getRepository();
         client.setOAuth2Token(ofNullable(github.getToken()).orElse(this.defaultToken));
         return new RepositoryService(client);
     }
 
-    private String organization(Project project) {
-        return ofNullable(project.getOrganization())
+    private String organization(GitHub github) {
+        return ofNullable(github.getOrganization())
                 .orElse(this.defaultOrganization);
     }
 
     private Repository createRepository(Project project) {
         final Repository repository = new Repository();
         repository.setName(project.getName());
-        repository.setDescription("Super Test");
+        repository.setDescription(project.getDescription());
         repository.setHomepage("https://byzaneo.io/catalog/services/test");
         repository.setPrivate(false);
         repository.setHasIssues(true);

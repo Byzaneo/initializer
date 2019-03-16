@@ -4,6 +4,7 @@ import io.byzaneo.initializer.bean.Project;
 import io.byzaneo.initializer.data.ProjectRepository;
 import io.byzaneo.initializer.service.InitializerService;
 import io.byzaneo.one.test.ReactiveMongoCleanupRule;
+import io.byzaneo.one.test.WithMockToken;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,11 +32,11 @@ public class InitializerServiceTest {
     public final ReactiveMongoCleanupRule cleanupRule = new ReactiveMongoCleanupRule(this, Project.class);
 
     @Test
+    @WithMockToken
     public void create() {
         this.service.create(Project.builder()
                 .name("test")
-                .owner("tester")
-                .organization("Byzaneo")
+                .namespace("io.byzaneo")
                 .build());
     }
 

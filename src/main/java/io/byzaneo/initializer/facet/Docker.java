@@ -5,24 +5,23 @@ import lombok.EqualsAndHashCode;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import javax.validation.constraints.NotBlank;
-
-import static io.byzaneo.initializer.Constants.FacetFamily.Management;
+import static io.byzaneo.initializer.Constants.FacetFamily.Assembly;
 import static org.springframework.beans.factory.config.ConfigurableBeanFactory.SCOPE_PROTOTYPE;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Component(Maven.FACET_NAME)
+@Component(Docker.FACET_NAME)
 @Scope(SCOPE_PROTOTYPE)
-public class Maven extends Facet {
+public class Docker extends Facet {
 
-    public static final String FACET_NAME = "Maven";
+    public static final String FACET_NAME = "Docker";
 
-    @NotBlank
-    private String version = "1.0.0-SNAPSHOT";
+    private String registry;
+    private String username;
+    private String password;
 
-    public Maven() {
-        super(Management, FACET_NAME, "https://maven.apache.org/");
+    public Docker() {
+        super(Assembly, FACET_NAME, "https://www.docker.com/");
     }
 
     @Override

@@ -70,6 +70,7 @@ public class SourcesService {
                                         .replace(root, "")
                                         .replace("{{[", "{{/"))
                                 .execute(context));
+                        log.debug("- {} > {}", tpl, dest);
                         transform(context, tpl, createParentDirectories(dest));
                     });
         } catch (IOException e) {

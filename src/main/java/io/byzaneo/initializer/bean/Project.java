@@ -1,17 +1,13 @@
 package io.byzaneo.initializer.bean;
 
 import io.byzaneo.initializer.Constants.Mode;
-import io.byzaneo.initializer.facet.Facet;
-import io.byzaneo.initializer.facet.GitHub;
-import io.byzaneo.initializer.facet.Java;
-import io.byzaneo.initializer.facet.Maven;
+import io.byzaneo.initializer.facet.*;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
-import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -33,9 +29,6 @@ import static lombok.AccessLevel.NONE;
 @AllArgsConstructor
 @NoArgsConstructor
 @Document(collection = Project.COLLECTION)
-@CompoundIndexes({
-        @CompoundIndex(name = "name_unique", unique = true, def = "{'name' : 1, 'organization' : 1}")
-})
 public class Project {
 
     public static final String COLLECTION = "projects";
@@ -45,10 +38,11 @@ public class Project {
     @Builder.Default
     private Instant date = Instant.now();
     @NonNull
-    @Indexed
+    @Indexed(unique = true)
     @NotBlank
     @Pattern(regexp = "^[a-z][a-z0-9_]*$")
     private String name;
+    @NonNull
     @NotBlank
     @Pattern(regexp = "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+[0-9a-z_]$")
     private String namespace;
@@ -56,44 +50,31 @@ public class Project {
 
     // - Security -
 
-    @NonNull
     private String owner;
-    @NotBlank
-    @NonNull
-    private String organization;
-
+    @Field("owner_name")
+    private String ownerName;
 
     // - Facets -
 
     @NotNull
-//    @Getter(NONE)
     @Builder.Default
     public Facet language = new Java();
-//    @Getter(NONE)
     @Builder.Default
     public Facet repository = new GitHub();
-//    @Getter(NONE)
     @Builder.Default
     public Facet management = new Maven();
-//    @Getter(NONE)
-//    @Builder.Default
-    public Facet assembly; // = "Docker";
-//    @Getter(NONE)
+    @Builder.Default
+    public Facet assembly = new Docker();
 //    @Builder.Default
     public Facet registry; // = "Nexus";
-//    @Getter(NONE)
-//    @Builder.Default
-    public Facet integration; // = "Travis";
-//    @Getter(NONE)
+    @Builder.Default
+    public Facet integration = new Travis();
 //    @Builder.Default
     public Facet coverage; // = "CodeCov";
-//    @Getter(NONE)
 //    @Builder.Default
     public Facet quality; // = "CodeClimate";
-//    @Getter(NONE)
 //    @Builder.Default
     public Facet deployment; // = "Spinnaker";
-//    @Getter(NONE)
 //    @Builder.Default
     public Facet front;
 
@@ -118,47 +99,6 @@ public class Project {
             throw new UncheckedIOException(e);
         }
     }
-
-//    @SuppressWarnings("unchecked")
-//    public <T extends Facet> T getLanguage() {
-//        return (T)language;
-//    }
-//    @SuppressWarnings("unchecked")
-//    public <T extends Facet> T getRepository() {
-//        return (T)repository;
-//    }
-//    @SuppressWarnings("unchecked")
-//    public <T extends Facet> T getManagement() {
-//        return (T)management;
-//    }
-//    @SuppressWarnings("unchecked")
-//    public <T extends Facet> T getAssembly() {
-//        return (T)assembly;
-//    }
-//    @SuppressWarnings("unchecked")
-//    public <T extends Facet> T getRegistry() {
-//        return (T)registry;
-//    }
-//    @SuppressWarnings("unchecked")
-//    public <T extends Facet> T getIntegration() {
-//        return (T)integration;
-//    }
-//    @SuppressWarnings("unchecked")
-//    public <T extends Facet> T getCoverage() {
-//        return (T)coverage;
-//    }
-//    @SuppressWarnings("unchecked")
-//    public <T extends Facet> T getQuality() {
-//        return (T)quality;
-//    }
-//    @SuppressWarnings("unchecked")
-//    public <T extends Facet> T getDeployment() {
-//        return (T)deployment;
-//    }
-//    @SuppressWarnings("unchecked")
-//    public <T extends Facet> T getFront() {
-//        return (T)front;
-//    }
 
     public Stream<Facet> facets() {
         return of(language, repository, management, assembly, registry,

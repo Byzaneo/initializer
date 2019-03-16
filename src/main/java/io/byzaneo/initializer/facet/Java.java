@@ -2,15 +2,18 @@ package io.byzaneo.initializer.facet;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javax.validation.constraints.NotBlank;
 
 import static io.byzaneo.initializer.Constants.FacetFamily.Language;
+import static org.springframework.beans.factory.config.ConfigurableBeanFactory.SCOPE_PROTOTYPE;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Component(Java.FACET_NAME)
+@Scope(SCOPE_PROTOTYPE)
 public class Java extends Facet {
 
     public static final String FACET_NAME = "Java";

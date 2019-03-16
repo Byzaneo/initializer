@@ -4,7 +4,6 @@ import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Template;
 import io.byzaneo.initializer.bean.Project;
 import io.byzaneo.initializer.event.ProjectSourcesEvent;
-import io.byzaneo.initializer.facet.Java;
 import io.byzaneo.initializer.service.SourcesService;
 import org.junit.Test;
 
@@ -16,7 +15,7 @@ import static java.nio.file.Files.exists;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class MustacheTest {
+public class SourcesServiceTest {
 
     @Test
     public void simple() {
@@ -28,14 +27,13 @@ public class MustacheTest {
     }
 
     @Test
-    public void projectContext() throws IOException {
+    public void onCreateSources() throws IOException {
 
         final Project project = Project.builder()
                 .name("test")
                 .namespace("io.byzaneo")
+                .ownerName("Tester")
                 .owner("tester@byzaneo.io")
-                .organization("byzaneo")
-                .language(new Java("11"))
                 .build();
 
         new SourcesService().onCreateSources(new ProjectSourcesEvent(project));

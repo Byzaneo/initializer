@@ -19,6 +19,8 @@ import java.util.Optional;
 import java.util.TreeSet;
 
 import static io.byzaneo.initializer.Constants.Mode.*;
+import static io.byzaneo.one.SecurityContext.userEmail;
+import static io.byzaneo.one.SecurityContext.userName;
 import static java.time.Duration.between;
 import static java.time.Duration.ofSeconds;
 import static java.time.Instant.now;
@@ -52,7 +54,11 @@ public class InitializerService {
 
     private Optional<Project> publish(@NotNull Project project, @NotNull Constants.Mode mode) {
         return ofNullable(project)
-                .map(p -> p.toBuilder().mode(mode).build())
+                .map(p -> p.toBuilder()
+                        .mode(mode)
+                        .ownerName(userName().orElse(null))
+                        .owner(userEmail().orElseThrow())
+                        .build())
                 .map(ProjectPreEvent::new)
                 .map(this::publish)
                 .map(ProjectRepositoryEvent::new)

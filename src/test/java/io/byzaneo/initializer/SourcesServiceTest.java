@@ -27,7 +27,7 @@ public class SourcesServiceTest {
     }
 
     @Test
-    public void onCreateSources() throws IOException {
+    public void create() throws IOException {
 
         final Project project = Project.builder()
                 .name("test")

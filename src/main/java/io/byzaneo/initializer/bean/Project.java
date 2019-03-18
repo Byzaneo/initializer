@@ -24,6 +24,10 @@ import static java.nio.file.Files.createTempDirectory;
 import static java.util.stream.Stream.of;
 import static lombok.AccessLevel.NONE;
 
+/**
+ * TODO license management https://developer.github.com/v3/licenses/#get-an-individual-license
+ * TODO README
+ */
 @Data
 @Builder(toBuilder = true)
 @AllArgsConstructor

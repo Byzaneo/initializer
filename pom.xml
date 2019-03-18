@@ -15,13 +15,18 @@
 
     <properties>
         <one.service.disabled>false</one.service.disabled>
-        <egit-github.version>5.1.0.201809111528-r</egit-github.version>
+        <egit-github.version>5.3.0.201903130848-r</egit-github.version>
+        <jgit.version>5.3.0.201903130848-r</jgit.version>
     </properties>
 
     <repositories>
         <repository>
             <id>egit-releases</id>
             <url>https://repo.eclipse.org/content/repositories/egit-releases/</url>
+        </repository>
+        <repository>
+            <id>jgit-releases</id>
+            <url>https://repo.eclipse.org/content/repositories/jgit-releases/</url>
         </repository>
     </repositories>
 
@@ -49,6 +54,11 @@
             <groupId>org.eclipse.mylyn.github</groupId>
             <artifactId>org.eclipse.egit.github.core</artifactId>
             <version>${egit-github.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jgit</groupId>
+            <artifactId>org.eclipse.jgit</artifactId>
+            <version>${jgit.version}</version>
         </dependency>
         <!-- * TEST * -->
         <dependency>

@@ -1,11 +1,14 @@
 package io.byzaneo.initializer.facet;
 
+import io.byzaneo.initializer.Constants.FacetFamily;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.eclipse.egit.github.core.Repository;
+import org.eclipse.jgit.api.Git;
 import org.springframework.context.annotation.Scope;
+import org.springframework.data.annotation.Transient;
 import org.springframework.stereotype.Component;
 
-import static io.byzaneo.initializer.Constants.FacetFamily.Repository;
 import static org.springframework.beans.factory.config.ConfigurableBeanFactory.SCOPE_PROTOTYPE;
 
 @Data
@@ -19,8 +22,12 @@ public class GitHub extends Facet {
     private String token;
     private String organization;
 
-    public GitHub() {
-        super(Repository, FACET_NAME, "https://github.com/");
-    }
+    @Transient
+    private Repository repository;
+    @Transient
+    private Git git;
 
+    public GitHub() {
+        super(FacetFamily.Repository, FACET_NAME, "https://github.com/");
+    }
 }

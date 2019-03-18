@@ -116,7 +116,7 @@ public class InitializerService {
     /* -- FACETS -- */
 
     @EventListener
-    public void loadFacets(@NotNull ContextRefreshedEvent event) {
+    public void onLoadFacets(@NotNull ContextRefreshedEvent event) {
         this.facetNamesByFamilies = new HashMap<>();
         event.getApplicationContext()
                 .getBeansOfType(Facet.class)
@@ -134,7 +134,7 @@ public class InitializerService {
     /* -- DATA -- */
 
     @EventListener(condition = "#event.project.mode == T(io.byzaneo.initializer.Constants$Mode).create or #event.project.mode == T(io.byzaneo.initializer.Constants$Mode).update")
-    public void saveProject(@NotNull ProjectPersistencyEvent event) {
+    public void onSaveProject(@NotNull ProjectPersistencyEvent event) {
         this.projects.save(event.getProject())
                 .blockOptional(ofSeconds(10))
                 .ifPresent(p -> log.info("Project saved: {}", p));
@@ -144,7 +144,7 @@ public class InitializerService {
 
     @EventListener
     @Order(HIGHEST_PRECEDENCE)
-    public void startProject(@NotNull ProjectPreEvent event) {
+    public void onStartProject(@NotNull ProjectPreEvent event) {
         log.info("{} {} project at {}",
                 event.getMode(),
                 event.getProject().getName(),
@@ -153,7 +153,7 @@ public class InitializerService {
 
     @EventListener
     @Order
-    public void endProject(@NotNull ProjectPostEvent event) {
+    public void onEndProject(@NotNull ProjectPostEvent event) {
         log.info("{} {} project ends in {}ms",
                 event.getMode(),
                 event.getProject().getName(),
@@ -162,7 +162,7 @@ public class InitializerService {
 
     @EventListener
     @Order(HIGHEST_PRECEDENCE + 1)
-    public void startEvent(@NotNull ProjectEvent event) {
+    public void onStartEvent(@NotNull ProjectEvent event) {
         log.debug("{} project {} event starts",
                 event.getProject().getName(),
                 event.getName());
@@ -170,7 +170,7 @@ public class InitializerService {
 
     @EventListener
     @Order(LOWEST_PRECEDENCE - 1)
-    public void endEvent(@NotNull ProjectEvent event) {
+    public void onEndEvent(@NotNull ProjectEvent event) {
         log.debug("{} project {} event ends in {}ms",
                 event.getProject().getName(),
                 event.getName(),
@@ -178,7 +178,7 @@ public class InitializerService {
     }
 
     @EventListener
-    public void error(@NotNull ErrorEvent event) {
+    public void onError(@NotNull ErrorEvent event) {
         log.error(event.toString());
     }
 }

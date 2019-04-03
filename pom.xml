@@ -7,6 +7,7 @@
         <groupId>io.byzaneo</groupId>
         <artifactId>byzaneo-one</artifactId>
         <version>1.0.0-SNAPSHOT</version>
+		<relativePath />
     </parent>
 
     <artifactId>initializer</artifactId>
@@ -20,6 +21,11 @@
     </properties>
 
     <repositories>
+        <repository>
+            <id>byzaneo-io</id>
+            <name>Byzaneo IO</name>
+            <url>https://repository.byzaneo.com/repository/byzaneo-io/</url>
+        </repository>
         <repository>
             <id>egit-releases</id>
             <url>https://repo.eclipse.org/content/repositories/egit-releases/</url>

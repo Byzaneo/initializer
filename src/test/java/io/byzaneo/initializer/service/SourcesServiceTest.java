@@ -1,10 +1,9 @@
-package io.byzaneo.initializer;
+package io.byzaneo.initializer.service;
 
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Template;
 import io.byzaneo.initializer.bean.Project;
 import io.byzaneo.initializer.event.ProjectSourcesEvent;
-import io.byzaneo.initializer.service.SourcesService;
 import org.junit.Test;
 
 import java.io.IOException;

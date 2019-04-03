@@ -7,10 +7,16 @@ spring:
   application.name: initializer
 
 initializer:
-  services:
-    github:
-      token: <https://github.com/settings/tokens>
-      organization: Byzaneo
+  github:
+    token: <https://github.com/settings/tokens>
+    organization: Byzaneo
+  docker:
+    registry: repository.byzaneo.com
+    username: byzaneo.io
+    password: [PASSWORD]
+  travis:
+    api: https://api.travis-ci.com/
+    token: [TOKEN]
 
 byzaneo:
   billing.enabled: false

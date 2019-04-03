@@ -10,6 +10,10 @@ import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.expression.EvaluationContext;
+import org.springframework.expression.ExpressionParser;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.SimpleEvaluationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -23,8 +27,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Files.newBufferedWriter;
 import static java.util.Arrays.stream;
+import static java.util.Objects.requireNonNull;
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
-import static org.springframework.util.StringUtils.capitalize;
 
 @Slf4j
 @Service
@@ -32,6 +36,9 @@ public class SourcesService {
 
     private static final Mustache.Compiler MUSTACHE = Mustache.compiler();
     private static final PathMatchingResourcePatternResolver RESOLVER = new PathMatchingResourcePatternResolver();
+    static final ExpressionParser EL = new SpelExpressionParser();
+    static final EvaluationContext EL_CONTEXT = SimpleEvaluationContext.forReadOnlyDataBinding().build();
+
 
     /* -- EVENTS -- */
 
@@ -48,13 +55,18 @@ public class SourcesService {
         project.facets()
                 .filter(f -> f.getTemplatesLocation()!=null)
                 .forEach(facet -> generateSources(context, facet));
+        // README
+        this.generateSources(context, "Readme");
     }
 
-    private void generateSources(Context context, Facet facet) {
+    private void generateSources(final Context context, final Facet facet) {
         log.info("{}: {} sources generation", context.project.getName(), facet.getName());
+        generateSources(context, facet.getTemplatesLocation());
+    }
 
+    void generateSources(final Context context, final String templatesLocation) {
         final Path directory = context.project.getDirectory();
-        final String templateLocation = "classpath:/templates/"+ facet.getTemplatesLocation()+"/";
+        final String templateLocation = "classpath:/templates/"+ templatesLocation +"/";
         final String root = Optional.of(RESOLVER.getResource(templateLocation))
                     .filter(Resource::exists)
                     .map(this::resourcePath)
@@ -104,16 +116,17 @@ public class SourcesService {
         }
     }
 
-    private final class Context {
+    static final class Context {
         final Project project;
-        final String capitalizedName;
         final Lambda folder = (fragment, writer) -> writer.write(fragment.execute().replace('.', '/'));
         final Lambda uppercase = (fragment, writer) -> writer.write(fragment.execute().toUpperCase());
+        final Lambda lowercase = (fragment, writer) -> writer.write(fragment.execute().toLowerCase());
         final Lambda capitalize = (fragment, writer) -> writer.write(StringUtils.capitalize(fragment.execute()));
+        final Lambda el;
 
-        private Context(Project project) {
+        Context(Project project) {
             this.project = project;
-            this.capitalizedName = capitalize(project.getName());
+            this.el = (fragment, writer) -> writer.write(requireNonNull(EL.parseExpression(fragment.execute()).getValue(EL_CONTEXT, project, String.class)));
         }
     }
 }

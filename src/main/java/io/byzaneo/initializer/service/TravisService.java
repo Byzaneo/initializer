@@ -1,6 +1,7 @@
 package io.byzaneo.initializer.service;
 
 import io.byzaneo.initializer.bean.Project;
+import io.byzaneo.initializer.event.ProjectPreEvent;
 import io.byzaneo.initializer.event.ProjectRepositoryEvent;
 import io.byzaneo.initializer.facet.Travis;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,7 @@ import java.io.IOException;
 
 import static java.util.Optional.ofNullable;
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
+import static org.springframework.util.StringUtils.hasText;
 
 @Slf4j
 @Service
@@ -26,7 +28,16 @@ public class TravisService {
 
     /* -- EVENTS -- */
 
-    @EventListener(condition = "#event.project.mode == T(io.byzaneo.initializer.Constants$Mode).create and #event.project.repository.name == T(io.byzaneo.initializer.facet.GitHub).FACET_NAME")
+    @EventListener(condition = "#event.project.integration?.name == T(io.byzaneo.initializer.facet.Travis).FACET_NAME")
+    public void onInit(ProjectPreEvent event) {
+        Travis travis = (Travis) event.getProject().getIntegration();
+        if ( !hasText(travis.getToken()) )
+            travis.setToken(this.defaultToken);
+        if ( !hasText(travis.getApi()) )
+            travis.setApi(this.defaultApi);
+    }
+
+    @EventListener(condition = "#event.project.mode == T(io.byzaneo.initializer.Constants$Mode).create and #event.project.integration.name == T(io.byzaneo.initializer.facet.Travis).FACET_NAME")
     @Order(HIGHEST_PRECEDENCE + 10)
     public void createReposioty(ProjectRepositoryEvent event) throws IOException {
         final Project project = event.getProject();

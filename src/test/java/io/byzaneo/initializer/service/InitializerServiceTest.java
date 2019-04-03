@@ -1,8 +1,7 @@
-package io.byzaneo.initializer;
+package io.byzaneo.initializer.service;
 
 import io.byzaneo.initializer.bean.Project;
 import io.byzaneo.initializer.data.ProjectRepository;
-import io.byzaneo.initializer.service.InitializerService;
 import io.byzaneo.one.test.ReactiveMongoCleanupRule;
 import io.byzaneo.one.test.WithMockToken;
 import org.junit.Rule;
@@ -19,7 +18,7 @@ import static io.byzaneo.one.Constants.PROFILE_TEST;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @ActiveProfiles(PROFILE_TEST)
-public class GitHubServiceTest {
+public class InitializerServiceTest {
 
     @Autowired
     private InitializerService service;

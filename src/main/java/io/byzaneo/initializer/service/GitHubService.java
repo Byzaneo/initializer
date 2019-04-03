@@ -3,6 +3,7 @@ package io.byzaneo.initializer.service;
 import io.byzaneo.initializer.RepositoryException;
 import io.byzaneo.initializer.bean.Project;
 import io.byzaneo.initializer.event.ProjectPostEvent;
+import io.byzaneo.initializer.event.ProjectPreEvent;
 import io.byzaneo.initializer.event.ProjectRepositoryEvent;
 import io.byzaneo.initializer.event.ProjectSourcesEvent;
 import io.byzaneo.initializer.facet.GitHub;
@@ -32,9 +33,8 @@ import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
 @Service
 public class GitHubService {
 
-    private static final String CONDITION_CREATE =
-            "#event.project.mode == T(io.byzaneo.initializer.Constants$Mode).create and " +
-            "#event.project.repository?.name == T(io.byzaneo.initializer.facet.GitHub).FACET_NAME";
+    private static final String CONDITION_GITHUB = "#event.project.repository?.name == T(io.byzaneo.initializer.facet.GitHub).FACET_NAME";
+    private static final String CONDITION_CREATE ="#event.project.mode == T(io.byzaneo.initializer.Constants$Mode).create and " + CONDITION_GITHUB;
 
     private final String defaultToken;
     private final String defaultOrganization;
@@ -49,6 +49,18 @@ public class GitHubService {
 
     /* -- EVENTS -- */
 
+    @EventListener(condition = CONDITION_GITHUB)
+    public void onInit(ProjectPreEvent event) {
+        final GitHub github = (GitHub) event.getProject().getRepository();
+
+        // resolves the token
+        github.setToken(ofNullable(github.getToken())
+                .orElse(this.defaultToken));
+        // resolves the organization
+        github.setOrganization(ofNullable(github.getOrganization())
+                .orElse(this.defaultOrganization));
+    }
+
     @EventListener(condition = CONDITION_CREATE)
     @Order(HIGHEST_PRECEDENCE + 10)
     public void onCreateRepository(ProjectRepositoryEvent event) throws IOException, GitAPIException {
@@ -56,12 +68,6 @@ public class GitHubService {
         final GitHub github = (GitHub) project.getRepository();
 
         log.info("Creating GitHub repository: {}/{}", github.getOrganization(), project.getName());
-        // resolves the token
-        github.setToken(ofNullable(github.getToken())
-                .orElse(this.defaultToken));
-        // resolves the organization
-        github.setOrganization(ofNullable(github.getOrganization())
-                .orElse(this.defaultOrganization));
         // creates the GitHub repository
         github.setRepository(this.repositoryService(github).createRepository(
                 github.getOrganization(),

@@ -1,8 +1,8 @@
 package io.byzaneo.initializer.service;
 
 import io.byzaneo.initializer.bean.Project;
+import io.byzaneo.initializer.event.ProjectIntegrationEvent;
 import io.byzaneo.initializer.event.ProjectPreEvent;
-import io.byzaneo.initializer.event.ProjectRepositoryEvent;
 import io.byzaneo.initializer.facet.Travis;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 
+import static io.byzaneo.initializer.service.InitializerService.CONDITION_CREATE;
 import static java.util.Optional.ofNullable;
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 import static org.springframework.util.StringUtils.hasText;
@@ -20,6 +21,7 @@ import static org.springframework.util.StringUtils.hasText;
 @Service
 public class TravisService {
 
+    public static final String CONDITION_TRAVIS = "#event.project.integration?.name == T(io.byzaneo.initializer.facet.Travis).FACET_NAME";
     @Value("${initializer.travis.token}")
     private String defaultToken;
 
@@ -28,7 +30,7 @@ public class TravisService {
 
     /* -- EVENTS -- */
 
-    @EventListener(condition = "#event.project.integration?.name == T(io.byzaneo.initializer.facet.Travis).FACET_NAME")
+    @EventListener(condition = CONDITION_TRAVIS)
     public void onInit(ProjectPreEvent event) {
         Travis travis = (Travis) event.getProject().getIntegration();
         if ( !hasText(travis.getToken()) )
@@ -37,9 +39,9 @@ public class TravisService {
             travis.setApi(this.defaultApi);
     }
 
-    @EventListener(condition = "#event.project.mode == T(io.byzaneo.initializer.Constants$Mode).create and #event.project.integration.name == T(io.byzaneo.initializer.facet.Travis).FACET_NAME")
+    @EventListener(condition = CONDITION_CREATE + " and "+ CONDITION_TRAVIS)
     @Order(HIGHEST_PRECEDENCE + 10)
-    public void createReposioty(ProjectRepositoryEvent event) throws IOException {
+    public void onCreateIntegration(ProjectIntegrationEvent event) throws IOException {
         final Project project = event.getProject();
         final Travis travis = (Travis) project.getIntegration();
 

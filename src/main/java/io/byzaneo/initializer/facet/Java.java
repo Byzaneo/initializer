@@ -19,7 +19,7 @@ public class Java extends Facet {
     public static final String FACET_NAME = "Java";
 
     @NotBlank
-    private String version = "11";
+    private String version = "12";
 
     public Java() {
         super(Language, FACET_NAME, "https://openjdk.java.net/");

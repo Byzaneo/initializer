@@ -73,8 +73,8 @@ public class Project {
     public Facet registry; // = "Nexus";
     @Builder.Default
     public Facet integration = new Travis();
-//    @Builder.Default
-    public Facet coverage; // = "CodeCov";
+    @Builder.Default
+    public Facet coverage = new CodeCov();
 //    @Builder.Default
     public Facet quality; // = "CodeClimate";
 //    @Builder.Default

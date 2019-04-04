@@ -1,47 +1,48 @@
 language: {{#lowercase}}{{project.language.name}}{{/lowercase}}
-{{#el}}language.name eq 'Java' ?  'jdk: openjdk' + language.version : ''{{/el}}
+{{#facets.Java}}
+jdk: openjdk{{project.language.version}}
+{{/facets.Java}}
 sudo: required
-{{#el}}
-assembly.name eq 'Docker'
-?
-'services:
+{{#facets.Docker}}
+services:
   - docker
-'
-: ''
-{{/el}}
-{{#el}}
-management.name eq 'Maven'
-?
-'cache:
+{{/facets.Docker}}
+{{#facets.Maven}}
+cache:
   directories:
     - "$HOME/.m2/repository"
-'
-: ''
-{{/el}}
+{{/facets.Maven}}
 
 env:
   global:
     - PROJECT_NAME={{project.name}}
-{{#el}}
-assembly.name eq 'Docker'
-?
-'    - TAG=latest
-    - IMAGE_NAME=' + assembly.registry + '/' + name + '
-'
-: ''
-{{/el}}
+{{#facets.Docker}}
+    - TAG=latest
+    - IMAGE_NAME={{project.assembly.registry}}/{{project.name}}
+{{/facets.Docker}}
 
 install: true
 
 script:
-  - ./target/travis-script.sh
-after_success:
-  - ./target/travis-success.sh
+{{#facets.Maven}}
+  - mvn package -U -B -P prod,coverage
+{{/facets.Maven}}
 
+{{#facets.CodeCov}}
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+{{/facets.CodeCov}}
+
+{{#facets.Docker}}
 before_deploy:
-  - ./target/travis-pre-deploy.sh
+  - docker login -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD {{project.assembly.registry}}
+  - docker pull "$IMAGE_NAME" || true
+  - docker build --pull --cache-from "$IMAGE_NAME" --tag "$IMAGE_NAME" .
+  - docker images
+  - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:${TAG}"
+{{/facets.Docker}}
 deploy:
   provider: script
-  script: "./target/travis-deploy.sh"
+  script: "./deploy.sh"
   on:
     branch: master

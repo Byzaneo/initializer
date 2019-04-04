@@ -34,7 +34,7 @@ import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
 public class GitHubService {
 
     private static final String CONDITION_GITHUB = "#event.project.repository?.name == T(io.byzaneo.initializer.facet.GitHub).FACET_NAME";
-    private static final String CONDITION_CREATE ="#event.project.mode == T(io.byzaneo.initializer.Constants$Mode).create and " + CONDITION_GITHUB;
+    private static final String CONDITION_CREATE = InitializerService.CONDITION_CREATE + " and " + CONDITION_GITHUB;
 
     private final String defaultToken;
     private final String defaultOrganization;

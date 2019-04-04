@@ -19,9 +19,12 @@ import org.springframework.util.StringUtils;
 
 import java.io.*;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static io.byzaneo.initializer.service.InitializerService.CONDITION_CREATE;
 import static java.net.URLDecoder.decode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.createDirectories;
@@ -42,7 +45,7 @@ public class SourcesService {
 
     /* -- EVENTS -- */
 
-    @EventListener(condition = "#event.project.mode == T(io.byzaneo.initializer.Constants$Mode).create")
+    @EventListener(condition = CONDITION_CREATE)
     @Order(HIGHEST_PRECEDENCE + 10)
     public void onCreateSources(ProjectSourcesEvent event) {
         generateSources(event.getProject());
@@ -123,10 +126,14 @@ public class SourcesService {
         final Lambda lowercase = (fragment, writer) -> writer.write(fragment.execute().toLowerCase());
         final Lambda capitalize = (fragment, writer) -> writer.write(StringUtils.capitalize(fragment.execute()));
         final Lambda el;
+        final Map<String, Boolean> facets;
 
         Context(Project project) {
             this.project = project;
             this.el = (fragment, writer) -> writer.write(requireNonNull(EL.parseExpression(fragment.execute()).getValue(EL_CONTEXT, project, String.class)));
+            this.facets = new HashMap<>();
+            this.project.facets()
+                    .forEach(f -> this.facets.put(f.getName(), true));
         }
     }
 }

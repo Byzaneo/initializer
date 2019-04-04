@@ -24,6 +24,13 @@ public class Docker extends Facet {
         super(Assembly, FACET_NAME, "https://www.docker.com/");
     }
 
+    public Docker(String registry, String username, String password) {
+        this();
+        this.registry = registry;
+        this.username = username;
+        this.password = password;
+    }
+
     @Override
     public String getTemplatesLocation() {
         return FACET_NAME;

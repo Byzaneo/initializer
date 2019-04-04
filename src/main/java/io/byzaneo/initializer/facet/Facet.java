@@ -4,9 +4,11 @@ import io.byzaneo.initializer.Constants;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cglib.beans.BeanMap;
 import org.springframework.data.annotation.Transient;
 
 import javax.validation.constraints.NotNull;
+import java.util.Map;
 
 @Data
 @RequiredArgsConstructor
@@ -31,5 +33,9 @@ public abstract class Facet {
      */
     public String getTemplatesLocation() {
         return null;
+    }
+
+    public Map toProperties() {
+        return BeanMap.create(this);
     }
 }

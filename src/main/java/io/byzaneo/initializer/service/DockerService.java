@@ -13,6 +13,9 @@ import static org.springframework.util.StringUtils.hasText;
 @Service
 public class DockerService {
 
+    private static final String CONDITION_DOCKER =
+            "#event.project.assembly?.name == T(io.byzaneo.initializer.facet.Docker).FACET_NAME";
+
     @Value("${initializer.docker.registry}")
     private String defaultRegistry;
 
@@ -25,7 +28,7 @@ public class DockerService {
 
     /* -- EVENTS -- */
 
-    @EventListener(condition = "#event.project.assembly?.name == T(io.byzaneo.initializer.facet.Docker).FACET_NAME")
+    @EventListener(condition = CONDITION_DOCKER)
     public void onInit(ProjectPreEvent event) {
         Docker docker = (Docker) event.getProject().getAssembly();
         if ( !hasText(docker.getRegistry()) )

@@ -31,6 +31,10 @@ import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
 @Slf4j
 @Service
 public class InitializerService {
+
+    static final String CONDITION_CREATE = "#event.project.mode == T(io.byzaneo.initializer.Constants$Mode).create";
+    static final String CONDITION_UPDATE = "#event.project.mode == T(io.byzaneo.initializer.Constants$Mode).update";
+
     private final ApplicationEventPublisher publisher;
     private final ProjectRepository projects;
     private Map<String, TreeSet<String>> facetNamesByFamilies;
@@ -133,7 +137,7 @@ public class InitializerService {
 
     /* -- DATA -- */
 
-    @EventListener(condition = "#event.project.mode == T(io.byzaneo.initializer.Constants$Mode).create or #event.project.mode == T(io.byzaneo.initializer.Constants$Mode).update")
+    @EventListener(condition = CONDITION_CREATE + " or " + CONDITION_UPDATE)
     public void onSaveProject(@NotNull ProjectPersistencyEvent event) {
         this.projects.save(event.getProject())
                 .blockOptional(ofSeconds(10))

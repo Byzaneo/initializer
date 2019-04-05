@@ -18,6 +18,7 @@ public class SecurityConfig extends AbstractSecurityConfig {
     @Override
     protected void authorizeRequests(ExpressionUrlAuthorizationConfigurer<HttpSecurity>.ExpressionInterceptUrlRegistry requests) {
         requests
+            .antMatchers("/api").permitAll()
             .antMatchers("/api/**").hasAuthority("{{project.name}}");
     }
 

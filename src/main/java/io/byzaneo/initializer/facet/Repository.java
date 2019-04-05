@@ -1,5 +1,6 @@
 package io.byzaneo.initializer.facet;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.byzaneo.initializer.Constants.FacetFamily;
 import io.byzaneo.initializer.bean.Project;
 import lombok.Data;
@@ -27,6 +28,7 @@ public abstract class Repository extends Facet {
 
     /** Local git repository */
     @Transient
+    @JsonIgnore
     private Git git;
 
     public Repository(String name, String home) {
@@ -36,5 +38,6 @@ public abstract class Repository extends Facet {
     /**
      * @return the URL-friendly version of a repository name
      */
+    @JsonIgnore
     public abstract String getSlug();
 }

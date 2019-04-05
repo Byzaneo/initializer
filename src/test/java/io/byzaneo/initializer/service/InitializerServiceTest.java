@@ -2,7 +2,6 @@ package io.byzaneo.initializer.service;
 
 import io.byzaneo.initializer.bean.Project;
 import io.byzaneo.initializer.data.ProjectRepository;
-import io.byzaneo.initializer.facet.Docker;
 import io.byzaneo.one.test.ReactiveMongoCleanupRule;
 import io.byzaneo.one.test.WithMockToken;
 import org.junit.Rule;
@@ -37,7 +36,6 @@ public class InitializerServiceTest {
         this.service.create(Project.builder()
                 .name("test")
                 .namespace("io.byzaneo")
-                .assembly(new Docker("my.registry", "me", "secret"))
                 .build());
     }
 

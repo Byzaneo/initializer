@@ -1,32 +1,48 @@
 package io.byzaneo.initializer.service;
 
+import io.byzaneo.initializer.Constants;
 import io.byzaneo.initializer.bean.Project;
 import io.byzaneo.initializer.event.ProjectIntegrationEvent;
+import io.byzaneo.initializer.event.ProjectPostEvent;
 import io.byzaneo.initializer.event.ProjectPreEvent;
+import io.byzaneo.initializer.event.ProjectRepositoryEvent;
 import io.byzaneo.initializer.facet.Travis;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.WebClient;
 
-import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.byzaneo.initializer.service.InitializerService.CONDITION_CREATE;
-import static java.util.Optional.ofNullable;
+import static java.time.Duration.ofSeconds;
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
+import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+import static org.springframework.http.HttpStatus.*;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.util.StringUtils.hasText;
 
 @Slf4j
 @Service
 public class TravisService {
 
-    public static final String CONDITION_TRAVIS = "#event.project.integration?.id == T(io.byzaneo.initializer.facet.Travis).FACET_ID";
-    @Value("${initializer.travis.token}")
-    private String defaultToken;
+    private static final String CONDITION_TRAVIS = "#event.project.integration?.id == T(io.byzaneo.initializer.facet.Travis).FACET_ID";
 
-    @Value("${initializer.travis.api}")
-    private String defaultApi;
+    private final String defaultToken;
+    private final String defaultApi;
+
+    public TravisService(
+            @Value("${initializer.travis.token}") String defaultToken,
+            @Value("${initializer.travis.api}") String defaultApi) {
+        this.defaultToken = defaultToken;
+        this.defaultApi = defaultApi;
+    }
 
     /* -- EVENTS -- */
 
@@ -39,29 +55,99 @@ public class TravisService {
             travis.setApi(this.defaultApi);
     }
 
-    @EventListener(condition = CONDITION_CREATE + " and "+ CONDITION_TRAVIS)
+    @EventListener(condition = CONDITION_CREATE + " and " + CONDITION_TRAVIS)
+    @Order(LOWEST_PRECEDENCE - 10)
+    public void onRepositoryCreated(ProjectRepositoryEvent event) {
+        // present repository facet means a repository
+        // should have been created
+        if ( event.getProject().getRepository()!=null )
+            // disables travis on the new repository
+            this.activation(event.getProject(), false);
+    }
+
+    @EventListener(condition = CONDITION_CREATE + " and " + CONDITION_TRAVIS)
     @Order(HIGHEST_PRECEDENCE + 10)
-    public void onCreateIntegration(ProjectIntegrationEvent event) throws IOException {
+    public void onCreateIntegration(ProjectIntegrationEvent event) {
         final Project project = event.getProject();
         final Travis travis = (Travis) project.getIntegration();
+        final String slug = project.getRepository().getSlug();
 
-        // TODO puts api and token in properties
+        log.info("Configuring Travis integration on: {}", slug);
 
-        log.info("Configuring Travis integration: {}", project.getName());
+        // adds environment variables
+        final AtomicInteger count = new AtomicInteger();
+        project.facets()
+            .filter(f -> !Travis.FACET_ID.equals(f.getId()))
+            .forEach(facet -> facet.toProperties()
+                .entrySet()
+                .stream()
+                .filter(e -> e.getValue()!=null)
+                .forEach(e -> {
+                    count.incrementAndGet();
+                    variables(travis, slug, facet.getFamily(), e);
+                }));
+        log.info("{} Travis env vars added on {}", count.get(), slug);
+    }
 
+    @EventListener(condition = CONDITION_CREATE + " and " + CONDITION_TRAVIS)
+    public void onProjectCreated(ProjectPostEvent event) {
+        // activates the project
+        this.activation(event.getProject(), true);
     }
 
     /* -- PRIVATE -- */
 
-    private String api(Travis travis) {
-        return ofNullable(travis.getApi())
-                .orElse(this.defaultApi);
+    private void activation(Project project, boolean activate) {
+        final Travis travis = (Travis) project.getIntegration();
+        final String slug = project.getRepository().getSlug();
+        final String prefix = activate ? "" : "de";
+
+        client(travis)
+            .post()
+            .uri("/repo/{slug}/{de}activate", slug, prefix)
+            .exchange()
+            .doOnSuccess(response -> {
+                if (OK.equals(response.statusCode()))
+                    log.info("Travis: {} {}activated", slug, prefix);
+                else
+                    log.warn("Travis: {} {}activation failed ({})", slug, prefix, response.rawStatusCode());
+            })
+            .block(ofSeconds(10));
     }
 
-    private String token(Travis travis) {
-        return ofNullable(travis.getToken())
-                .orElse(this.defaultToken);
+    private void variables(Travis travis, String slug, Constants.FacetFamily family, Map.Entry<String, Object> entry) {
+        client(travis)
+                .post()
+                .uri("/repo/{slug}/env_vars", slug)
+                .body(BodyInserters
+                        // env var key: [FAMILY]_[NAME]
+                        .fromFormData("env_var.name", (family+"_"+entry.getKey()).toUpperCase())
+                        .with("env_var.value", entry.getValue().toString())
+                        // only property name which contains 'password' or 'token' will be secret
+                        .with("env_var.public", Boolean.toString(!(
+                                entry.getKey().toLowerCase().contains("password") ||
+                                entry.getKey().toLowerCase().contains("token")))))
+                .exchange()
+                .doOnSuccess(response -> {
+                    if (CREATED.equals(response.statusCode()))
+                        log.debug("variable: {}_{}", family, entry.getKey());
+                    else if (CONFLICT.equals(response.statusCode()))
+                        log.warn("variable already exists: {}_{} ({})",
+                                family, entry.getKey(), response.rawStatusCode());
+                    else // should we throw an exception
+                        log.error("Travis {} variable failed: {}_{} ({})",
+                                slug, family, entry.getKey(), response.rawStatusCode());
+                })
+                .block(ofSeconds(10));
     }
 
-
+    private WebClient client(Travis travis) {
+        return WebClient.builder()
+            .baseUrl(travis.getApi())
+            .defaultHeader(AUTHORIZATION, "token "+travis.getToken())
+            .defaultHeader("Travis-API-Version", "3")
+            .defaultHeader("User-Agent", "API Explorer")
+            .defaultHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE)
+            .build();
+    }
 }

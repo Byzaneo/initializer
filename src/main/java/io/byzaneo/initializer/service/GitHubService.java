@@ -9,6 +9,7 @@ import io.byzaneo.initializer.event.ProjectSourcesEvent;
 import io.byzaneo.initializer.facet.GitHub;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.egit.github.core.Repository;
+import org.eclipse.egit.github.core.User;
 import org.eclipse.egit.github.core.client.GitHubClient;
 import org.eclipse.egit.github.core.service.CollaboratorService;
 import org.eclipse.egit.github.core.service.RepositoryService;
@@ -23,6 +24,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -54,7 +56,7 @@ public class GitHubService {
     /* -- EVENTS -- */
 
     @EventListener(condition = CONDITION_GITHUB)
-    public void onInit(ProjectPreEvent event) throws IOException {
+    public void onInit(ProjectPreEvent event) {
         final GitHub github = (GitHub) event.getProject().getRepository();
 
         // resolves the repository name
@@ -68,9 +70,10 @@ public class GitHubService {
                 .orElse(this.defaultOrganization));
         // resolves the username
         github.setUsername(ofNullable(github.getUsername())
-                .orElse(userService(github).getUser().getLogin()));
+                .orElse(user(github).getLogin()));
 
-        log.info("GitHub repository {} initialized", github.getSlug());
+        // sanity checks
+        log.info("GitHub repository: {}", github.getSlug());
     }
 
     @EventListener(condition = CONDITION_CREATE)
@@ -169,6 +172,14 @@ public class GitHubService {
         return client(gitHub)
                 .map(UserService::new)
                 .orElseThrow();
+    }
+
+    private User user(GitHub github) {
+        try {
+            return userService(github).getUser();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private Repository toRepository(Project project) {

@@ -16,14 +16,18 @@ public class DockerService {
     private static final String CONDITION_DOCKER =
             "#event.project.assembly?.id == T(io.byzaneo.initializer.facet.Docker).FACET_ID";
 
-    @Value("${initializer.docker.registry}")
-    private String defaultRegistry;
+    private final String defaultRegistry;
+    private final String defaultUsername;
+    private final String defaultPassword;
 
-    @Value("${initializer.docker.username}")
-    private String defaultUsername;
-
-    @Value("${initializer.docker.password}")
-    private String defaultPassword;
+    public DockerService(
+            @Value("${initializer.docker.registry}") String defaultRegistry,
+            @Value("${initializer.docker.username}") String defaultUsername,
+            @Value("${initializer.docker.password}") String defaultPassword) {
+        this.defaultRegistry = defaultRegistry;
+        this.defaultUsername = defaultUsername;
+        this.defaultPassword = defaultPassword;
+    }
 
 
     /* -- EVENTS -- */

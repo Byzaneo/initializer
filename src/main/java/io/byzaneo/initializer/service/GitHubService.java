@@ -10,7 +10,9 @@ import io.byzaneo.initializer.facet.GitHub;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.client.GitHubClient;
+import org.eclipse.egit.github.core.service.CollaboratorService;
 import org.eclipse.egit.github.core.service.RepositoryService;
+import org.eclipse.egit.github.core.service.UserService;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -23,8 +25,10 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.stream.Stream;
 
+import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
@@ -50,10 +54,10 @@ public class GitHubService {
     /* -- EVENTS -- */
 
     @EventListener(condition = CONDITION_GITHUB)
-    public void onInit(ProjectPreEvent event) {
+    public void onInit(ProjectPreEvent event) throws IOException {
         final GitHub github = (GitHub) event.getProject().getRepository();
 
-        // resolves the token
+        // resolves the repository name
         github.setName(ofNullable(github.getName())
                 .orElse(event.getProject().getName()));
         // resolves the token
@@ -62,6 +66,9 @@ public class GitHubService {
         // resolves the organization
         github.setOrganization(ofNullable(github.getOrganization())
                 .orElse(this.defaultOrganization));
+        // resolves the username
+        github.setUsername(ofNullable(github.getUsername())
+                .orElse(userService(github).getUser().getLogin()));
 
         log.info("GitHub repository {} initialized", github.getSlug());
     }
@@ -77,6 +84,9 @@ public class GitHubService {
         github.setRepository(this.repositoryService(github).createRepository(
                 github.getOrganization(),
                 this.toRepository(project)));
+        // invites user to collaborate
+        this.collaboratorService(github)
+                .addCollaborator(github.getRepository(), github.getUsername());
         // clone repo in the project's directory
         github.setGit(Git.cloneRepository()
                 .setURI(github.getRepository().getCloneUrl())
@@ -110,7 +120,6 @@ public class GitHubService {
             // commits
             final RevCommit commit = git
                     .commit()
-                    .setAuthor(project.getOwnerName(), project.getOwner())
                     .setMessage("Initial commit")
                     .call();
             log.info("= {}", commit);
@@ -138,10 +147,28 @@ public class GitHubService {
 
     /* -- PRIVATE -- */
 
-    private RepositoryService repositoryService(GitHub github) {
+    private Optional<GitHubClient> client(GitHub github) {
         final GitHubClient client = new GitHubClient();
         client.setOAuth2Token(github.getToken());
-        return new RepositoryService(client);
+        return of(client);
+    }
+
+    private CollaboratorService collaboratorService(GitHub github) {
+        return client(github)
+                .map(CollaboratorService::new)
+                .orElseThrow();
+    }
+
+    private RepositoryService repositoryService(GitHub github) {
+        return client(github)
+                .map(RepositoryService::new)
+                .orElseThrow();
+    }
+
+    private UserService userService(GitHub gitHub) {
+        return client(gitHub)
+                .map(UserService::new)
+                .orElseThrow();
     }
 
     private Repository toRepository(Project project) {

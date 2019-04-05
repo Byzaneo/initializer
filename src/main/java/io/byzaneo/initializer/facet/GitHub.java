@@ -26,16 +26,14 @@ public class GitHub extends io.byzaneo.initializer.facet.Repository {
         super(FACET_ID, "https://github.com/");
     }
 
+    public GitHub(String username) {
+        this();
+        this.username = username;
+    }
+
     public GitHub(String organization, String name) {
         this();
         this.organization = organization;
-        this.name = name;
-    }
-
-    public GitHub(String username, String password, String name) {
-        this();
-        this.username = username;
-        this.password = password;
         this.name = name;
     }
 

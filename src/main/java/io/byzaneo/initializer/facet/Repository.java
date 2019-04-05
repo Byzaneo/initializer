@@ -14,7 +14,7 @@ import org.springframework.data.annotation.Transient;
 @EqualsAndHashCode(callSuper = true)
 public abstract class Repository extends Facet {
 
-    /** Account */
+    /** Account (if null: resolved by token) */
     protected String username;
     /** Password */
     protected String password;

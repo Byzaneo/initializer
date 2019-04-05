@@ -21,7 +21,7 @@ import static org.springframework.util.StringUtils.hasText;
 @Service
 public class TravisService {
 
-    public static final String CONDITION_TRAVIS = "#event.project.integration?.name == T(io.byzaneo.initializer.facet.Travis).FACET_NAME";
+    public static final String CONDITION_TRAVIS = "#event.project.integration?.id == T(io.byzaneo.initializer.facet.Travis).FACET_ID";
     @Value("${initializer.travis.token}")
     private String defaultToken;
 

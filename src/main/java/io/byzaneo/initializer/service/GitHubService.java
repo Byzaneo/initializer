@@ -1,6 +1,6 @@
 package io.byzaneo.initializer.service;
 
-import io.byzaneo.initializer.RepositoryException;
+import io.byzaneo.initializer.InitializerException;
 import io.byzaneo.initializer.bean.Project;
 import io.byzaneo.initializer.event.ProjectPostEvent;
 import io.byzaneo.initializer.event.ProjectPreEvent;
@@ -33,7 +33,7 @@ import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
 @Service
 public class GitHubService {
 
-    private static final String CONDITION_GITHUB = "#event.project.repository?.name == T(io.byzaneo.initializer.facet.GitHub).FACET_NAME";
+    private static final String CONDITION_GITHUB = "#event.project.repository?.id == T(io.byzaneo.initializer.facet.GitHub).FACET_ID";
     private static final String CONDITION_CREATE = InitializerService.CONDITION_CREATE + " and " + CONDITION_GITHUB;
 
     private final String defaultToken;
@@ -54,11 +54,16 @@ public class GitHubService {
         final GitHub github = (GitHub) event.getProject().getRepository();
 
         // resolves the token
+        github.setName(ofNullable(github.getName())
+                .orElse(event.getProject().getName()));
+        // resolves the token
         github.setToken(ofNullable(github.getToken())
                 .orElse(this.defaultToken));
         // resolves the organization
         github.setOrganization(ofNullable(github.getOrganization())
                 .orElse(this.defaultOrganization));
+
+        log.info("GitHub repository {} initialized", github.getSlug());
     }
 
     @EventListener(condition = CONDITION_CREATE)
@@ -98,7 +103,7 @@ public class GitHubService {
                         git.add().addFilepattern(fn).call();
                         log.debug("./{} added", fn);
                     } catch (GitAPIException e) {
-                        throw new RepositoryException("Git add failed for file name: "+fn);
+                        throw new InitializerException("Git add failed for file name: "+fn);
                     }
                 });
 
@@ -117,7 +122,7 @@ public class GitHubService {
                     .forEach(pr -> log.info("= push: {}", pr.getMessages()));
 
         } catch (Exception e) {
-            throw new RepositoryException("Failed to commit project "+project.getName()+
+            throw new InitializerException("Failed to commit project "+project.getName()+
                     " sources from: "+project.getDirectory(), e);
         }
     }

@@ -10,18 +10,18 @@ import static org.springframework.beans.factory.config.ConfigurableBeanFactory.S
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Component(Docker.FACET_NAME)
+@Component(Docker.FACET_ID)
 @Scope(SCOPE_PROTOTYPE)
 public class Docker extends Facet {
 
-    public static final String FACET_NAME = "Docker";
+    public static final String FACET_ID = "Docker";
 
     private String registry;
     private String username;
     private String password;
 
     public Docker() {
-        super(Assembly, FACET_NAME, "https://www.docker.com/");
+        super(Assembly, FACET_ID, "https://www.docker.com/");
     }
 
     public Docker(String registry, String username, String password) {
@@ -33,6 +33,6 @@ public class Docker extends Facet {
 
     @Override
     public String getTemplatesLocation() {
-        return FACET_NAME;
+        return FACET_ID;
     }
 }

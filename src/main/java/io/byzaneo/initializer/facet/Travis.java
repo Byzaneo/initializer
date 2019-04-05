@@ -10,17 +10,21 @@ import static org.springframework.beans.factory.config.ConfigurableBeanFactory.S
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Component(Travis.FACET_NAME)
+@Component(Travis.FACET_ID)
 @Scope(SCOPE_PROTOTYPE)
 public class Travis extends Facet {
 
-    public static final String FACET_NAME = "Travis";
+    public static final String FACET_ID = "Travis";
 
     private String token;
     private String api;
 
     public Travis() {
-        super(Integration, FACET_NAME, "https://travis-ci.com");
+        super(Integration, FACET_ID, "https://travis-ci.com");
     }
 
+    @Override
+    public String getTemplatesLocation() {
+        return FACET_ID;
+    }
 }

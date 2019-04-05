@@ -1,4 +1,4 @@
-language: {{#lowercase}}{{project.language.name}}{{/lowercase}}
+language: {{#lowercase}}{{project.language.id}}{{/lowercase}}
 {{#facets.Java}}
 jdk: openjdk{{project.language.version}}
 {{/facets.Java}}

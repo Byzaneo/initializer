@@ -12,21 +12,21 @@ import static org.springframework.beans.factory.config.ConfigurableBeanFactory.S
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Component(Maven.FACET_NAME)
+@Component(Maven.FACET_ID)
 @Scope(SCOPE_PROTOTYPE)
 public class Maven extends Facet {
 
-    public static final String FACET_NAME = "Maven";
+    public static final String FACET_ID = "Maven";
 
     @NotBlank
     private String version = "1.0.0-SNAPSHOT";
 
     public Maven() {
-        super(Management, FACET_NAME, "https://maven.apache.org/");
+        super(Management, FACET_ID, "https://maven.apache.org/");
     }
 
     @Override
     public String getTemplatesLocation() {
-        return FACET_NAME;
+        return FACET_ID;
     }
 }

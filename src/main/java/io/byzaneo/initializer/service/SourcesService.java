@@ -63,11 +63,11 @@ public class SourcesService {
     }
 
     private void generateSources(final Context context, final Facet facet) {
-        log.info("{}: {} sources generation", context.project.getName(), facet.getName());
         generateSources(context, facet.getTemplatesLocation());
     }
 
     void generateSources(final Context context, final String templatesLocation) {
+        log.info("{}: {} sources generation", context.project.getName(), templatesLocation);
         final Path directory = context.project.getDirectory();
         final String templateLocation = "classpath:/templates/"+ templatesLocation +"/";
         final String root = Optional.of(RESOLVER.getResource(templateLocation))
@@ -114,6 +114,9 @@ public class SourcesService {
         try (final Reader reader = new BufferedReader(new InputStreamReader(template.getInputStream(), UTF_8));
              final Writer writer = newBufferedWriter(destination, UTF_8)) {
             MUSTACHE.compile(reader).execute(context, writer);
+        } catch (RuntimeException re) {
+            log.error("Error transforming template {}", template);
+            throw re;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -133,7 +136,7 @@ public class SourcesService {
             this.el = (fragment, writer) -> writer.write(requireNonNull(EL.parseExpression(fragment.execute()).getValue(EL_CONTEXT, project, String.class)));
             this.facets = new HashMap<>();
             this.project.facets()
-                    .forEach(f -> this.facets.put(f.getName(), true));
+                    .forEach(f -> this.facets.put(f.getId(), true));
         }
     }
 }

@@ -1,33 +1,56 @@
 package io.byzaneo.initializer.facet;
 
-import io.byzaneo.initializer.Constants.FacetFamily;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.eclipse.egit.github.core.Repository;
-import org.eclipse.jgit.api.Git;
 import org.springframework.context.annotation.Scope;
 import org.springframework.data.annotation.Transient;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 
 import static org.springframework.beans.factory.config.ConfigurableBeanFactory.SCOPE_PROTOTYPE;
+import static org.springframework.util.StringUtils.hasText;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Component(GitHub.FACET_NAME)
+@Component(GitHub.FACET_ID)
 @Scope(SCOPE_PROTOTYPE)
-public class GitHub extends Facet {
+public class GitHub extends io.byzaneo.initializer.facet.Repository {
 
-    public static final String FACET_NAME = "GitHub";
-
-    private String token;
-    private String organization;
+    public static final String FACET_ID = "GitHub";
 
     @Transient
     private Repository repository;
-    @Transient
-    private Git git;
 
     public GitHub() {
-        super(FacetFamily.Repository, FACET_NAME, "https://github.com/");
+        super(FACET_ID, "https://github.com/");
+    }
+
+    public GitHub(String organization, String name) {
+        this();
+        this.organization = organization;
+        this.name = name;
+    }
+
+    public GitHub(String username, String password, String name) {
+        this();
+        this.username = username;
+        this.password = password;
+        this.name = name;
+    }
+
+    @Override
+    public String getSlug() {
+        Assert.hasText(name, "Repository name is required");
+
+        String slug = "";
+        if ( hasText(organization) )
+            slug += organization;
+        else if ( hasText(username) )
+            slug += username;
+        else
+            throw new IllegalStateException("Repository requires an username or an organization");
+
+        return slug.concat("/").concat(name);
     }
 }

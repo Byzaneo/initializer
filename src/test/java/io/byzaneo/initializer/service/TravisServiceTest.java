@@ -9,14 +9,13 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.byzaneo.initializer.service.SourcesService.EL;
 import static io.byzaneo.initializer.service.SourcesService.EL_CONTEXT;
-import static java.nio.file.Files.exists;
+import static java.nio.file.Files.*;
 import static java.util.Comparator.reverseOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -28,11 +27,11 @@ public class TravisServiceTest {
     @Before
     public void before() throws IOException {
         final Path dir = Paths.get("C:\\Temp\\travis");
-        if ( Files.isDirectory(dir) )
-            Files.walk(dir)
-                    .sorted(reverseOrder())
-                    .map(Path::toFile)
-                    .forEach(File::delete);
+        if ( isDirectory(dir) )
+            walk(dir)
+                .sorted(reverseOrder())
+                .map(Path::toFile)
+                .forEach(File::delete);
 
         this.project = Project.builder()
                 .name("test")
@@ -48,7 +47,7 @@ public class TravisServiceTest {
     public void el() {
         assertEquals(
                 "jdk: openjdk"+((Java)project.getLanguage()).getVersion(),
-                EL.parseExpression("language.name eq 'Java' ?  'jdk: openjdk' + language.version : ''").getValue(EL_CONTEXT, project, String.class));
+                EL.parseExpression("language.id eq 'Java' ?  'jdk: openjdk' + language.version : ''").getValue(EL_CONTEXT, project, String.class));
     }
 
     @Test
@@ -56,7 +55,7 @@ public class TravisServiceTest {
         new SourcesService().generateSources(new Context(project), "Travis");
 
         final AtomicInteger count = new AtomicInteger();
-        Files.walk(project.getDirectory())
+        walk(project.getDirectory())
                 .peek(System.out::println)
                 .forEach(p -> {count.incrementAndGet(); assertTrue(exists(p));});
         assertEquals(3, count.get());

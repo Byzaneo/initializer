@@ -14,7 +14,7 @@ import static org.springframework.util.StringUtils.hasText;
 public class DockerService {
 
     private static final String CONDITION_DOCKER =
-            "#event.project.assembly?.name == T(io.byzaneo.initializer.facet.Docker).FACET_NAME";
+            "#event.project.assembly?.id == T(io.byzaneo.initializer.facet.Docker).FACET_ID";
 
     @Value("${initializer.docker.registry}")
     private String defaultRegistry;

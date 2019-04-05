@@ -64,7 +64,7 @@ public class Project {
     @Builder.Default
     public Facet language = new Java();
     @Builder.Default
-    public Facet repository = new GitHub();
+    public Repository repository = new GitHub();
     @Builder.Default
     public Facet management = new Maven();
     @Builder.Default

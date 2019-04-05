@@ -10,14 +10,14 @@ import static org.springframework.beans.factory.config.ConfigurableBeanFactory.S
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Component(CodeCov.FACET_NAME)
+@Component(CodeCov.FACET_ID)
 @Scope(SCOPE_PROTOTYPE)
 public class CodeCov extends Facet {
 
-    public static final String FACET_NAME = "CodeCov";
+    public static final String FACET_ID = "CodeCov";
 
     public CodeCov() {
-        super(Coverage, FACET_NAME, "https://codecov.io");
+        super(Coverage, FACET_ID, "https://codecov.io");
     }
 
 }

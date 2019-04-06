@@ -63,7 +63,7 @@ public class TravisServiceTest {
                 .namespace("io.byzaneo")
                 .ownerName("Tester")
                 .owner("tester@byzaneo.io")
-                .assembly(new Docker("my.registry", "me", "secret"))
+                .registry(new Docker("my.registry", "me", "secret"))
                 .directory(dir)
                 .build();
 

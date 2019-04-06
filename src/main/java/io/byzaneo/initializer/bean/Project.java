@@ -1,5 +1,6 @@
 package io.byzaneo.initializer.bean;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.byzaneo.initializer.Constants.Mode;
 import io.byzaneo.initializer.facet.*;
 import lombok.*;
@@ -16,17 +17,16 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
+import static java.time.Instant.now;
 import static java.util.stream.Stream.of;
 import static lombok.AccessLevel.NONE;
 
 /**
  * TODO license management https://developer.github.com/v3/licenses/#get-an-individual-license
- * TODO README
  */
 @Data
 @Builder(toBuilder = true)
@@ -40,7 +40,7 @@ public class Project {
     @Id
     private String id;
     @Builder.Default
-    private Instant date = Instant.now();
+    private Instant date = now();
     @NonNull
     @Indexed(unique = true)
     @NotBlank
@@ -68,9 +68,7 @@ public class Project {
     @Builder.Default
     public Facet management = new Maven();
     @Builder.Default
-    public Facet assembly = new Docker();
-//    @Builder.Default
-    public Facet registry; // = "Nexus";
+    public Facet registry = new Docker();
     @Builder.Default
     public Facet integration = new Travis();
     @Builder.Default
@@ -85,14 +83,13 @@ public class Project {
     // - Transient -
 
     @Transient
+    @JsonIgnore
     @Builder.Default
     private Mode mode = Mode.create;
     @Transient
+    @JsonIgnore
     @Getter(NONE)
     private Path directory;
-    @Transient
-    @Singular
-    private Map<String, String> properties;
 
     public Path getDirectory() {
         try {
@@ -105,7 +102,7 @@ public class Project {
     }
 
     public Stream<Facet> facets() {
-        return of(language, repository, management, assembly, registry,
+        return of(language, repository, management, registry,
                 integration, coverage, quality, deployment, front)
                 .filter(Objects::nonNull);
     }

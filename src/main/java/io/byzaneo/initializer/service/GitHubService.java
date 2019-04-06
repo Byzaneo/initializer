@@ -34,6 +34,7 @@ import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
+import static org.springframework.util.StringUtils.hasText;
 
 @Slf4j
 @Service
@@ -73,7 +74,7 @@ public class GitHubService {
                 .orElse(user(github).getLogin()));
 
         // sanity checks
-        log.info("GitHub repository: {}", github.getSlug());
+        log.info("GitHub: {}", github.getSlug());
     }
 
     @EventListener(condition = CONDITION_CREATE)
@@ -82,14 +83,17 @@ public class GitHubService {
         final Project project = event.getProject();
         final GitHub github = (GitHub) project.getRepository();
 
-        log.info("Creating GitHub repository: {}/{}", github.getOrganization(), project.getName());
+        log.info("Creating GitHub repository: {}", github.getSlug());
+
         // creates the GitHub repository
-        github.setRepository(this.repositoryService(github).createRepository(
-                github.getOrganization(),
-                this.toRepository(project)));
+        github.setRepository(hasText(github.getOrganization())
+            ? this.repositoryService(github).createRepository(github.getOrganization(), this.toRepository(project, github))
+            : this.repositoryService(github).createRepository(this.toRepository(project, github)));
+
         // invites user to collaborate
         this.collaboratorService(github)
                 .addCollaborator(github.getRepository(), github.getUsername());
+
         // clone repo in the project's directory
         github.setGit(Git.cloneRepository()
                 .setURI(github.getRepository().getCloneUrl())
@@ -182,9 +186,9 @@ public class GitHubService {
         }
     }
 
-    private Repository toRepository(Project project) {
+    private Repository toRepository(Project project, GitHub github) {
         final Repository repository = new Repository();
-        repository.setName(project.getName());
+        repository.setName(github.getName());
         repository.setDescription(project.getDescription());
         repository.setHomepage("https://byzaneo.io/account/projects/"+project.getName());
         repository.setPrivate(false);

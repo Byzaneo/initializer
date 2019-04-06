@@ -1,6 +1,5 @@
 package io.byzaneo.initializer.service;
 
-import io.byzaneo.initializer.Constants;
 import io.byzaneo.initializer.bean.Project;
 import io.byzaneo.initializer.event.ProjectIntegrationEvent;
 import io.byzaneo.initializer.event.ProjectPostEvent;
@@ -12,11 +11,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.time.Duration;
 
 import static io.byzaneo.initializer.service.InitializerService.CONDITION_CREATE;
 import static java.time.Duration.ofSeconds;
@@ -27,12 +24,15 @@ import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpStatus.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.util.StringUtils.hasText;
+import static org.springframework.web.reactive.function.BodyInserters.fromFormData;
 
 @Slf4j
 @Service
 public class TravisService {
 
     private static final String CONDITION_TRAVIS = "#event.project.integration?.id == T(io.byzaneo.initializer.facet.Travis).FACET_ID";
+    private static final Duration TIMEOUT = ofSeconds(15);
+    private static final String PROJECT_VARS = "PROJECT";
 
     private final String defaultToken;
     private final String defaultApi;
@@ -48,11 +48,13 @@ public class TravisService {
 
     @EventListener(condition = CONDITION_TRAVIS)
     public void onInit(ProjectPreEvent event) {
-        Travis travis = (Travis) event.getProject().getIntegration();
+        final Travis travis = (Travis) event.getProject().getIntegration();
         if ( !hasText(travis.getToken()) )
             travis.setToken(this.defaultToken);
         if ( !hasText(travis.getApi()) )
             travis.setApi(this.defaultApi);
+
+        log.info("Travis: {}", travis.getApi());
     }
 
     @EventListener(condition = CONDITION_CREATE + " and " + CONDITION_TRAVIS)
@@ -74,25 +76,30 @@ public class TravisService {
 
         log.info("Configuring Travis integration on: {}", slug);
 
-        // adds environment variables
-        final AtomicInteger count = new AtomicInteger();
+        // adds project environment variables
+        this.variables(travis, slug, PROJECT_VARS, "NAME", project.getName());
+        this.variables(travis, slug, PROJECT_VARS, "DESCRIPTION", project.getDescription());
+        this.variables(travis, slug, PROJECT_VARS, "OWNER_NAME", project.getOwnerName());
+        this.variables(travis, slug, PROJECT_VARS, "OWNER_EMAIL", project.getOwner());
+        log.info("Travis project {} env vars added on {}", project.getName(), slug);
+
+        // adds facets environment variables
         project.facets()
             .filter(f -> !Travis.FACET_ID.equals(f.getId()))
             .forEach(facet -> facet.toProperties()
                 .entrySet()
                 .stream()
-                .filter(e -> e.getValue()!=null)
-                .forEach(e -> {
-                    count.incrementAndGet();
-                    variables(travis, slug, facet.getFamily(), e);
-                }));
-        log.info("{} Travis env vars added on {}", count.get(), slug);
+                .forEach(e -> this.variables(travis, slug, facet.getFamily().toString(),
+                        e.getKey(), e.getValue())));
+        log.info("Travis facets env vars added on {}", slug);
     }
 
     @EventListener(condition = CONDITION_CREATE + " and " + CONDITION_TRAVIS)
     public void onProjectCreated(ProjectPostEvent event) {
         // activates the project
         this.activation(event.getProject(), true);
+        // triggers first build
+        this.trigger(event.getProject());
     }
 
     /* -- PRIVATE -- */
@@ -112,33 +119,54 @@ public class TravisService {
                 else
                     log.warn("Travis: {} {}activation failed ({})", slug, prefix, response.rawStatusCode());
             })
-            .block(ofSeconds(10));
+            .block(TIMEOUT);
     }
 
-    private void variables(Travis travis, String slug, Constants.FacetFamily family, Map.Entry<String, Object> entry) {
+    private void variables(Travis travis, String slug, String keyPrefix, String key, Object value) {
+        // skips null value
+        if ( value==null )
+            return;
+
+        // env var key: [KEY_PREFIX]_[KEY]
+        final String var = (keyPrefix + "_" + key).toUpperCase();
         client(travis)
                 .post()
                 .uri("/repo/{slug}/env_vars", slug)
-                .body(BodyInserters
-                        // env var key: [FAMILY]_[NAME]
-                        .fromFormData("env_var.name", (family+"_"+entry.getKey()).toUpperCase())
-                        .with("env_var.value", entry.getValue().toString())
+                .body(fromFormData("env_var.name", var)
+                        .with("env_var.value", value.toString())
                         // only property name which contains 'password' or 'token' will be secret
                         .with("env_var.public", Boolean.toString(!(
-                                entry.getKey().toLowerCase().contains("password") ||
-                                entry.getKey().toLowerCase().contains("token")))))
+                                key.toLowerCase().contains("password") ||
+                                key.toLowerCase().contains("token")))))
                 .exchange()
                 .doOnSuccess(response -> {
                     if (CREATED.equals(response.statusCode()))
-                        log.debug("variable: {}_{}", family, entry.getKey());
+                        log.debug("variable: {}", var);
                     else if (CONFLICT.equals(response.statusCode()))
-                        log.warn("variable already exists: {}_{} ({})",
-                                family, entry.getKey(), response.rawStatusCode());
+                        log.warn("variable already exists: {} ({})", var, response.rawStatusCode());
                     else // should we throw an exception
-                        log.error("Travis {} variable failed: {}_{} ({})",
-                                slug, family, entry.getKey(), response.rawStatusCode());
+                        log.error("Travis {} variable failed: {} ({})", slug, var, response.rawStatusCode());
                 })
-                .block(ofSeconds(10));
+                .block(TIMEOUT);
+    }
+
+    private void trigger(Project project) {
+        final Travis travis = (Travis) project.getIntegration();
+        final String slug = project.getRepository().getSlug();
+
+        client(travis)
+                .post()
+                .uri("/repo/{slug}/requests", slug)
+                .body(fromFormData("request.message", "First build")
+                        .with("request.branch", "master"))
+                .exchange()
+                .doOnSuccess(response -> {
+                    if (ACCEPTED.equals(response.statusCode()))
+                        log.info("Travis: {} triggered", slug);
+                    else
+                        log.warn("Travis: {} triggering failed ({})", slug, response.rawStatusCode());
+                })
+                .block(TIMEOUT);
     }
 
     private WebClient client(Travis travis) {

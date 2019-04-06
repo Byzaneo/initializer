@@ -14,17 +14,17 @@ import static org.springframework.util.StringUtils.hasText;
 public class DockerService {
 
     private static final String CONDITION_DOCKER =
-            "#event.project.assembly?.id == T(io.byzaneo.initializer.facet.Docker).FACET_ID";
+            "#event.project.registry?.id == T(io.byzaneo.initializer.facet.Docker).FACET_ID";
 
-    private final String defaultRegistry;
+    private final String defaultHostname;
     private final String defaultUsername;
     private final String defaultPassword;
 
     public DockerService(
-            @Value("${initializer.docker.registry}") String defaultRegistry,
+            @Value("${initializer.docker.hostname}") String defaultHostname,
             @Value("${initializer.docker.username}") String defaultUsername,
             @Value("${initializer.docker.password}") String defaultPassword) {
-        this.defaultRegistry = defaultRegistry;
+        this.defaultHostname = defaultHostname;
         this.defaultUsername = defaultUsername;
         this.defaultPassword = defaultPassword;
     }
@@ -34,13 +34,15 @@ public class DockerService {
 
     @EventListener(condition = CONDITION_DOCKER)
     public void onInit(ProjectPreEvent event) {
-        Docker docker = (Docker) event.getProject().getAssembly();
-        if ( !hasText(docker.getRegistry()) )
-            docker.setRegistry(this.defaultRegistry);
+        Docker docker = (Docker) event.getProject().getRegistry();
+        if ( !hasText(docker.getHostname()) )
+            docker.setHostname(this.defaultHostname);
         if ( !hasText(docker.getUsername()) )
             docker.setUsername(this.defaultUsername);
         if ( !hasText(docker.getPassword()) )
             docker.setPassword(this.defaultPassword);
+
+        log.info("Docker: {}", docker.getHostname());
     }
 
     /* -- PRIVATE -- */

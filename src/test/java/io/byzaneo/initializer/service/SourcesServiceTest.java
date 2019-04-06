@@ -40,7 +40,7 @@ public class SourcesServiceTest {
                 .ownerName("Tester")
                 .owner("tester@byzaneo.io")
                 .repository(new GitHub("my-org", "my-repo"))
-                .assembly(new Docker("my.registry", "me", "secret"))
+                .registry(new Docker("my.registry", "me", "secret"))
                 .directory(dir)
                 .build();
     }

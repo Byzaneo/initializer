@@ -5,7 +5,6 @@ public class Constants {
     public enum FacetFamily {
         Language,
         Management,
-        Assembly,
         Registry,
         Integration,
         Coverage,

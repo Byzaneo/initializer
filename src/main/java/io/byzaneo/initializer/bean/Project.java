@@ -6,6 +6,8 @@ import io.byzaneo.initializer.facet.*;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -33,6 +35,9 @@ import static lombok.AccessLevel.NONE;
 @AllArgsConstructor
 @NoArgsConstructor
 @Document(collection = Project.COLLECTION)
+@CompoundIndexes({
+        @CompoundIndex(name = "natural_id", def = "{'name' : 1, 'owner': 1}", unique = true)
+})
 public class Project {
 
     public static final String COLLECTION = "projects";

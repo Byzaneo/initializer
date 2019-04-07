@@ -23,20 +23,29 @@ public class InitializerServiceTest {
     @Autowired
     private InitializerService service;
     @Autowired
+    @SuppressWarnings("unused")
+    private GitHubService github;
+    @Autowired
+    @SuppressWarnings("unused")
     private ProjectRepository repo;
     @Autowired
+    @SuppressWarnings("unused")
     private ReactiveMongoTemplate mongoTemplate;
 
     @Rule
-    public final ReactiveMongoCleanupRule cleanupRule = new ReactiveMongoCleanupRule(this, Project.class);
+    public final ReactiveMongoCleanupRule cleanupRule =
+            new ReactiveMongoCleanupRule(this, Project.class);
+
+    private Project project = Project.builder()
+            .name("test")
+            .namespace("io.byzaneo")
+            .build();
 
     @Test
     @WithMockToken
-    public void create() {
-        this.service.create(Project.builder()
-                .name("test")
-                .namespace("io.byzaneo")
-                .build());
+    public void test() {
+        this.service.delete(this.service
+            .create(project)
+            .orElseThrow());
     }
-
 }

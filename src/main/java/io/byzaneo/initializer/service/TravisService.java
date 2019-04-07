@@ -1,5 +1,6 @@
 package io.byzaneo.initializer.service;
 
+import io.byzaneo.initializer.Constants;
 import io.byzaneo.initializer.bean.Project;
 import io.byzaneo.initializer.event.ProjectIntegrationEvent;
 import io.byzaneo.initializer.event.ProjectPostEvent;
@@ -13,10 +14,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.time.Duration;
-
 import static io.byzaneo.initializer.service.InitializerService.CONDITION_CREATE;
-import static java.time.Duration.ofSeconds;
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
@@ -31,7 +29,6 @@ import static org.springframework.web.reactive.function.BodyInserters.fromFormDa
 public class TravisService {
 
     private static final String CONDITION_TRAVIS = "#event.project.integration?.id == T(io.byzaneo.initializer.facet.Travis).FACET_ID";
-    private static final Duration TIMEOUT = ofSeconds(15);
     private static final String PROJECT_VARS = "PROJECT";
 
     private final String defaultToken;
@@ -77,20 +74,17 @@ public class TravisService {
         log.info("Configuring Travis integration on: {}", slug);
 
         // adds project environment variables
-        this.variables(travis, slug, PROJECT_VARS, "NAME", project.getName());
-        this.variables(travis, slug, PROJECT_VARS, "DESCRIPTION", project.getDescription());
-        this.variables(travis, slug, PROJECT_VARS, "OWNER_NAME", project.getOwnerName());
-        this.variables(travis, slug, PROJECT_VARS, "OWNER_EMAIL", project.getOwner());
+        this.variable(travis, slug, PROJECT_VARS, "NAME", project.getName());
+        this.variable(travis, slug, PROJECT_VARS, "DESCRIPTION", project.getDescription());
+        this.variable(travis, slug, PROJECT_VARS, "OWNER_NAME", project.getOwnerName());
+        this.variable(travis, slug, PROJECT_VARS, "OWNER_EMAIL", project.getOwner());
         log.info("Travis project {} env vars added on {}", project.getName(), slug);
 
         // adds facets environment variables
         project.facets()
             .filter(f -> !Travis.FACET_ID.equals(f.getId()))
             .forEach(facet -> facet.toProperties()
-                .entrySet()
-                .stream()
-                .forEach(e -> this.variables(travis, slug, facet.getFamily().toString(),
-                        e.getKey(), e.getValue())));
+                .forEach((k, v) -> this.variable(travis, slug, facet.getFamily().toString(), k, v)));
         log.info("Travis facets env vars added on {}", slug);
     }
 
@@ -119,10 +113,10 @@ public class TravisService {
                 else
                     log.warn("Travis: {} {}activation failed ({})", slug, prefix, response.rawStatusCode());
             })
-            .block(TIMEOUT);
+            .block(Constants.TIMEOUT);
     }
 
-    private void variables(Travis travis, String slug, String keyPrefix, String key, Object value) {
+    private void variable(Travis travis, String slug, String keyPrefix, String key, Object value) {
         // skips null value
         if ( value==null )
             return;
@@ -147,7 +141,7 @@ public class TravisService {
                     else // should we throw an exception
                         log.error("Travis {} variable failed: {} ({})", slug, var, response.rawStatusCode());
                 })
-                .block(TIMEOUT);
+                .block(Constants.TIMEOUT);
     }
 
     private void trigger(Project project) {
@@ -166,7 +160,7 @@ public class TravisService {
                     else
                         log.warn("Travis: {} triggering failed ({})", slug, response.rawStatusCode());
                 })
-                .block(TIMEOUT);
+                .block(Constants.TIMEOUT);
     }
 
     private WebClient client(Travis travis) {

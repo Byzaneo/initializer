@@ -46,7 +46,12 @@ public class GitHub extends io.byzaneo.initializer.facet.Repository {
     @Override
     public String getSlug() {
         Assert.hasText(name, "GitHub repository name is required");
+        return getOwner() + "/" + name;
+    }
+
+    @JsonIgnore
+    public String getOwner() {
         Assert.isTrue(hasText(organization) || hasText(username), "GitHub repository organization or username is required");
-        return (hasText(organization) ? organization : username) + "/" + name;
+        return hasText(organization) ? organization : username;
     }
 }

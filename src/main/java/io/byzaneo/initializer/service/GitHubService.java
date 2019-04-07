@@ -2,15 +2,13 @@ package io.byzaneo.initializer.service;
 
 import io.byzaneo.initializer.InitializerException;
 import io.byzaneo.initializer.bean.Project;
-import io.byzaneo.initializer.event.ProjectPostEvent;
-import io.byzaneo.initializer.event.ProjectPreEvent;
-import io.byzaneo.initializer.event.ProjectRepositoryEvent;
-import io.byzaneo.initializer.event.ProjectSourcesEvent;
+import io.byzaneo.initializer.event.*;
 import io.byzaneo.initializer.facet.GitHub;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.User;
 import org.eclipse.egit.github.core.client.GitHubClient;
+import org.eclipse.egit.github.core.client.RequestException;
 import org.eclipse.egit.github.core.service.CollaboratorService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.eclipse.egit.github.core.service.UserService;
@@ -30,6 +28,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static io.byzaneo.initializer.Constants.Mode.create;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
@@ -42,6 +41,7 @@ public class GitHubService {
 
     private static final String CONDITION_GITHUB = "#event.project.repository?.id == T(io.byzaneo.initializer.facet.GitHub).FACET_ID";
     private static final String CONDITION_CREATE = InitializerService.CONDITION_CREATE + " and " + CONDITION_GITHUB;
+    private static final String CONDITION_DELETE = InitializerService.CONDITION_DELETE + " and " + CONDITION_GITHUB;
 
     private final String defaultToken;
     private final String defaultOrganization;
@@ -57,7 +57,7 @@ public class GitHubService {
     /* -- EVENTS -- */
 
     @EventListener(condition = CONDITION_GITHUB)
-    public void onInit(ProjectPreEvent event) {
+    public void onInit(ProjectPreEvent event) throws IOException {
         final GitHub github = (GitHub) event.getProject().getRepository();
 
         // resolves the repository name
@@ -75,11 +75,26 @@ public class GitHubService {
 
         // sanity checks
         log.info("GitHub: {}", github.getSlug());
+
+        // gets the project's repository
+        if ( !create.equals(event.getProject().getMode()) ) {
+            try {
+                github.setRepository(this.repositoryService(github)
+                    .getRepository(github.getOwner(), github.getName()));
+            } catch (RequestException re) {
+                if ( re.getStatus()==404 )
+                    log.warn("GitHub repository not found: {}", github.getSlug());
+                else
+                    throw re;
+            }
+        }
     }
+
+    /* - CREATE - */
 
     @EventListener(condition = CONDITION_CREATE)
     @Order(HIGHEST_PRECEDENCE + 10)
-    public void onCreateRepository(ProjectRepositoryEvent event) throws IOException, GitAPIException {
+    public void onCreateRepository(ProjectRepositoryEvent event) throws GitAPIException, IOException {
         final Project project = event.getProject();
         final GitHub github = (GitHub) project.getRepository();
 
@@ -104,7 +119,7 @@ public class GitHubService {
 
     @EventListener(condition = CONDITION_CREATE)
     @Order(LOWEST_PRECEDENCE - 5)
-    public void onCommitSources(ProjectSourcesEvent event) throws IOException {
+    public void onCommitSources(ProjectSourcesEvent event) {
         final Project project = event.getProject();
         final GitHub github = (GitHub) project.getRepository();
         final Git git = github.getGit();
@@ -145,11 +160,31 @@ public class GitHubService {
 
     @EventListener(condition = CONDITION_CREATE)
     @Order(LOWEST_PRECEDENCE - 5)
-    public void onPost(ProjectPostEvent event) throws IOException {
+    public void onPost(ProjectPostEvent event) {
         final Project project = event.getProject();
         final GitHub github = (GitHub) project.getRepository();
         log.debug("Closing git repository connection");
-        github.getGit().close();
+        if ( github.getGit()!=null )
+            github.getGit().close();
+    }
+
+    /* - DELETE - */
+
+    @EventListener(condition = CONDITION_DELETE)
+    @Order(LOWEST_PRECEDENCE - 10)
+    public void onDeleteRepository(ProjectRepositoryEvent event) throws IOException {
+        this.delete((GitHub) event.getProject().getRepository());
+    }
+
+    /* - ERROR - */
+
+    @EventListener(condition = CONDITION_CREATE)
+    public void onCreationError(ProjectErrorEvent error) {
+        try {
+            this.delete((GitHub) error.getProject().getRepository());
+        } catch (IOException e) {
+            log.error("Rollback error while deleting GitHub repository", e);
+        }
     }
 
     /* -- PRIVATE -- */
@@ -183,6 +218,13 @@ public class GitHubService {
             return userService(github).getUser();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+    }
+
+    private void delete(GitHub github) throws IOException {
+        if ( github.getRepository()!=null ) {
+            log.info("Deleting GitHub repository: {}", github.getSlug());
+            this.repositoryService(github).deleteRepository(github.getRepository());
         }
     }
 

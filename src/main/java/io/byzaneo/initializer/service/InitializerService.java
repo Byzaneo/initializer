@@ -10,6 +10,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.stereotype.Service;
 
 import javax.validation.constraints.NotNull;
@@ -19,14 +20,15 @@ import java.util.Optional;
 import java.util.TreeSet;
 
 import static io.byzaneo.initializer.Constants.Mode.*;
+import static io.byzaneo.initializer.Constants.TIMEOUT;
 import static io.byzaneo.one.SecurityContext.userEmail;
 import static io.byzaneo.one.SecurityContext.userName;
 import static java.time.Duration.between;
-import static java.time.Duration.ofSeconds;
 import static java.time.Instant.now;
-import static java.util.Optional.ofNullable;
+import static java.util.Optional.of;
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
+import static org.springframework.util.Assert.notNull;
 
 @Slf4j
 @Service
@@ -34,6 +36,7 @@ public class InitializerService {
 
     static final String CONDITION_CREATE = "#event.project.mode == T(io.byzaneo.initializer.Constants$Mode).create";
     static final String CONDITION_UPDATE = "#event.project.mode == T(io.byzaneo.initializer.Constants$Mode).update";
+    static final String CONDITION_DELETE = "#event.project.mode == T(io.byzaneo.initializer.Constants$Mode).delete";
 
     private final ApplicationEventPublisher publisher;
     private final ProjectRepository projects;
@@ -57,12 +60,10 @@ public class InitializerService {
     }
 
     private Optional<Project> publish(@NotNull Project project, @NotNull Constants.Mode mode) {
-        return ofNullable(project)
-                .map(p -> p.toBuilder()
-                        .mode(mode)
-                        .ownerName(userName().orElse(null))
-                        .owner(userEmail().orElseThrow())
-                        .build())
+        project.setMode(mode);
+        return of(project)
+                .map(this::authenticate)
+                .map(p -> this.resolve(project, mode))
                 .map(ProjectPreEvent::new)
                 .map(this::publish)
                 .map(ProjectRepositoryEvent::new)
@@ -79,42 +80,49 @@ public class InitializerService {
                 .map(this::publish);
     }
 
-/*
-                // - Repository -
-                .doOnNext(this.publisher.publishEvent(new RepositoryCreation(project)))
-                    // Repository-Github::create -> project.repo = https://...
-                .doOnNext(this.publisher.publishEvent(new RepositoryCreated(project)))
-                    // Integration-Travis::deactivate,
-                    // Quality-CodeClimate::deactivate,
-                    // Coverage-CodeCov::deactivate
-
-                // - Sources -
-                .doOnNext(this.publisher.publishEvent(new SourceCreation(project)))
-                    // Language::source -> project.dir = /.../
-                .doOnNext(this.publisher.publishEvent(new SourceCreated(project)))
-                    // Management::source, Integration-Travis::source, Documentation-Readme::source, License::source
-                .doOnNext(this.publisher.publishEvent(new SourcePush(project)))
-                    // Repository-Github::push
-
-                // - Deployment -
-                .doOnNext(this.publisher.publishEvent(new DeploymentCreation(project)))
-                    // Deployment-Spinnaker::create
-                .doOnNext(this.publisher.publishEvent(new DeploymentCreated(project)))
-
-                .doOnNext(this.publisher.publishEvent(new ProjectCreated(project)))
-                    // Integration::activate, Quality:activate, Coverage::activate
-*/
-
     private Project publish(ProjectEvent event) {
         try {
             this.publisher.publishEvent(event);
         } catch (Exception e) {
             // publishes project error event
             // to be able to manage rollbacks
-            this.publisher.publishEvent(new ErrorEvent(event, e));
+            this.publisher.publishEvent(new ProjectErrorEvent(event, e));
             throw e;
         }
         return event.getProject();
+    }
+
+    private Project resolve(Project project, Constants.Mode mode) {
+        switch (mode) {
+            case create:
+                return project;
+            case update:
+                notNull(project.getId(), "Project identifier (id) is required");
+                return project;
+            case delete:
+                return (project.getId()!=null
+                        ? this.projects.findById(project.getId())
+                        : this.projects.findByNameAndOwner(project.getName(), project.getOwner()))
+                    .doOnNext(p -> p.setMode(mode))
+                    // lets work with the given project...
+                    .defaultIfEmpty(project)
+                    .block(TIMEOUT);
+        }
+        throw new IllegalArgumentException("Mode not supported: "+mode);
+    }
+
+    private Project authenticate(@NotNull Project project) {
+        project.setOwner(userEmail().orElseThrow());
+        project.setOwnerName(userName().orElse(null));
+
+        if ( create.equals(project.getMode()) )
+            log.debug("user: {}", project.getOwner());
+        else
+            log.debug("user: {}", userEmail()
+                .filter(owner -> owner.equals(project.getOwner()))
+                .orElseThrow(() -> new InsufficientAuthenticationException("Action restricted to the p owner")));
+
+        return project;
     }
 
     /* -- FACETS -- */
@@ -125,9 +133,9 @@ public class InitializerService {
         event.getApplicationContext()
                 .getBeansOfType(Facet.class)
                 .forEach((name, facet) ->
-                    this.facetNamesByFamilies
-                            .computeIfAbsent(facet.getFamily().toString(), s -> new TreeSet<>())
-                            .add(name));
+                        this.facetNamesByFamilies
+                                .computeIfAbsent(facet.getFamily().toString(), s -> new TreeSet<>())
+                                .add(name));
         log.info("Facets: {}", this.facetNamesByFamilies);
     }
 
@@ -140,8 +148,18 @@ public class InitializerService {
     @EventListener(condition = CONDITION_CREATE + " or " + CONDITION_UPDATE)
     public void onSaveProject(@NotNull ProjectPersistencyEvent event) {
         this.projects.save(event.getProject())
-                .blockOptional(ofSeconds(10))
+                .blockOptional(TIMEOUT)
                 .ifPresent(p -> log.info("Project saved: {}", p));
+    }
+
+    @EventListener(condition = CONDITION_DELETE)
+    public void onDeleteProject(@NotNull ProjectPersistencyEvent event) {
+        if ( event.getProject().getId()!=null )
+            this.projects.delete(event.getProject())
+                    .blockOptional(TIMEOUT)
+                    .ifPresent(p -> log.info("Project deleted: {}", p));
+        else
+            log.warn("Project not found for deletion: {}", event.getProject());
     }
 
     /* -- LOGS -- */
@@ -182,7 +200,8 @@ public class InitializerService {
     }
 
     @EventListener
-    public void onError(@NotNull ErrorEvent event) {
+    public void onError(@NotNull ProjectErrorEvent event) {
         log.error(event.toString());
     }
 }
+

@@ -101,9 +101,10 @@ public class GitHubService {
         log.info("Creating GitHub repository: {}", github.getSlug());
 
         // creates the GitHub repository
+        final Repository repo = this.toRepository(project, github);
         github.setRepository(hasText(github.getOrganization())
-            ? this.repositoryService(github).createRepository(github.getOrganization(), this.toRepository(project, github))
-            : this.repositoryService(github).createRepository(this.toRepository(project, github)));
+            ? this.repositoryService(github).createRepository(github.getOrganization(), repo)
+            : this.repositoryService(github).createRepository(repo));
 
         // invites user to collaborate
         this.collaboratorService(github)

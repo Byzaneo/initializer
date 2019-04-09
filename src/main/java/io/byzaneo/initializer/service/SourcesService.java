@@ -122,6 +122,7 @@ public class SourcesService {
         }
     }
 
+    @SuppressWarnings("unused")
     static final class Context {
         final Project project;
         final Lambda folder = (fragment, writer) -> writer.write(fragment.execute().replace('.', '/'));

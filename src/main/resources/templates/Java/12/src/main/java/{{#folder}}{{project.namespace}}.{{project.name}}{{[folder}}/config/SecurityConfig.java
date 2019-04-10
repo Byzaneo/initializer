@@ -3,12 +3,11 @@ package {{project.namespace}}.{{project.name}}.config;
 import io.byzaneo.one.config.AbstractSecurityConfig;
 import io.byzaneo.one.config.ByzaneoProperties;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.ExpressionUrlAuthorizationConfigurer;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
 
 @Configuration
-@EnableWebSecurity
+@EnableWebFluxSecurity
 public class SecurityConfig extends AbstractSecurityConfig {
 
     protected SecurityConfig(ByzaneoProperties properties) {
@@ -16,10 +15,10 @@ public class SecurityConfig extends AbstractSecurityConfig {
     }
 
     @Override
-    protected void authorizeRequests(ExpressionUrlAuthorizationConfigurer<HttpSecurity>.ExpressionInterceptUrlRegistry requests) {
-        requests
-            .antMatchers("/api").permitAll()
-            .antMatchers("/api/**").hasAuthority("{{project.name}}");
+    protected ServerHttpSecurity.AuthorizeExchangeSpec authorizeExchange(ServerHttpSecurity.AuthorizeExchangeSpec exchanges) {
+        return exchanges
+                .pathMatchers("/api").permitAll()
+                .pathMatchers("/api/**").hasAuthority("{{project.name}}");
     }
 
 }

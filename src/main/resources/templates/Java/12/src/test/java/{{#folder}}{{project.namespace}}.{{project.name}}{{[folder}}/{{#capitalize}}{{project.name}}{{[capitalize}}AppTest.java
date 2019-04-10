@@ -1,4 +1,4 @@
-package {{project.namespace}}.{{project.name}}.test;
+package {{project.namespace}}.{{project.name}};
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

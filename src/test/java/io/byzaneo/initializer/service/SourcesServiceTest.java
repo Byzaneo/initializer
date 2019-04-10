@@ -35,7 +35,7 @@ public class SourcesServiceTest {
                 .forEach(File::delete);
 
         project = Project.builder()
-                .name("test")
+                .name("dummy")
                 .namespace("io.byzaneo")
                 .ownerName("Tester")
                 .owner("tester@byzaneo.io")

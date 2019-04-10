@@ -34,7 +34,7 @@ public class GitHubServiceTest {
     @WithMockToken
     public void create() {
         this.service.create(Project.builder()
-                .name("test")
+                .name("dummy")
                 .namespace("io.byzaneo")
                 .build());
     }

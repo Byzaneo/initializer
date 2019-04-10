@@ -33,11 +33,10 @@ public class InitializerServiceTest {
     private ReactiveMongoTemplate mongoTemplate;
 
     @Rule
-    public final ReactiveMongoCleanupRule cleanupRule =
-            new ReactiveMongoCleanupRule(this, Project.class);
+    public final ReactiveMongoCleanupRule cleanupRule = new ReactiveMongoCleanupRule(this, Project.class);
 
     private Project project = Project.builder()
-            .name("test")
+            .name("dummy")
             .namespace("io.byzaneo")
             .build();
 
@@ -48,4 +47,5 @@ public class InitializerServiceTest {
             .create(project)
             .orElseThrow());
     }
+
 }

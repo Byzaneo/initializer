@@ -57,7 +57,7 @@ public class TravisServiceTest {
                 .map(Path::toFile)
                 .forEach(File::delete);
 
-        final String name = "test";
+        final String name = "dummy";
         this.project = Project.builder()
                 .name(name)
                 .namespace("io.byzaneo")

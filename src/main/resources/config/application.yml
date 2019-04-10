@@ -11,11 +11,14 @@ initializer:
     token: <https://github.com/settings/tokens>
     organization: Byzaneo
   docker:
-    registry: repository.byzaneo.com
+    hostname: repository.byzaneo.com
     username: byzaneo.io
     password: [PASSWORD]
   travis:
     api: https://api.travis-ci.com/
+    token: [TOKEN]
+  codeclimate:
+    api: https://api.codeclimate.com/
     token: [TOKEN]
 
 byzaneo:

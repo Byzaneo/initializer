@@ -78,8 +78,8 @@ public class Project {
     public Facet integration = new Travis();
     @Builder.Default
     public Facet coverage = new CodeCov();
-//    @Builder.Default
-    public Facet quality; // = "CodeClimate";
+    @Builder.Default
+    public Facet quality = new CodeClimate();
 //    @Builder.Default
     public Facet deployment; // = "Spinnaker";
 //    @Builder.Default

@@ -13,7 +13,11 @@ import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.NoSuchElementException;
+
 import static io.byzaneo.one.Constants.PROFILE_TEST;
+import static reactor.core.publisher.Mono.defer;
+import static reactor.core.publisher.Mono.error;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -43,9 +47,11 @@ public class InitializerServiceTest {
     @Test
     @WithMockToken
     public void test() {
-        this.service.delete(this.service
-            .create(project)
-            .orElseThrow());
+        this.service
+                .create(project)
+                .switchIfEmpty(defer(() -> error(new NoSuchElementException("No value present"))))
+                .then(this.service.delete(project))
+                .block();
     }
 
 }

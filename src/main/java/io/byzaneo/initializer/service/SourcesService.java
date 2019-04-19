@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static io.byzaneo.initializer.service.InitializerService.CONDITION_CREATE;
+import static io.byzaneo.initializer.service.InitializerService.CONDITION_UPDATE;
 import static java.net.URLDecoder.decode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.createDirectories;
@@ -45,7 +46,7 @@ public class SourcesService {
 
     /* -- EVENTS -- */
 
-    @EventListener(condition = CONDITION_CREATE)
+    @EventListener(condition = CONDITION_CREATE + " or " + CONDITION_UPDATE)
     @Order(HIGHEST_PRECEDENCE + 10)
     public void onCreateSources(ProjectSourcesEvent event) {
         generateSources(event.getProject());

@@ -10,8 +10,6 @@ import reactor.core.publisher.Mono;
 
 import javax.validation.Valid;
 
-import static reactor.core.publisher.Mono.justOrEmpty;
-
 @RestController
 @RequestMapping("/api/projects")
 public class ProjectController {
@@ -25,6 +23,6 @@ public class ProjectController {
 
     @PostMapping
     public Mono<Project> create(@RequestBody @Valid Project project) {
-        return justOrEmpty(this.initalizerService.create(project));
+        return this.initalizerService.create(project);
     }
 }

@@ -12,23 +12,24 @@ import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 
 import javax.validation.constraints.NotNull;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.TreeSet;
 
+import static io.byzaneo.initializer.Constants.Mode.create;
 import static io.byzaneo.initializer.Constants.Mode.*;
 import static io.byzaneo.initializer.Constants.TIMEOUT;
 import static io.byzaneo.one.SecurityContext.userEmail;
 import static io.byzaneo.one.SecurityContext.userName;
 import static java.time.Duration.between;
 import static java.time.Instant.now;
-import static java.util.Optional.of;
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 import static org.springframework.core.Ordered.LOWEST_PRECEDENCE;
 import static org.springframework.util.Assert.notNull;
+import static reactor.core.publisher.Mono.*;
 
 @Slf4j
 @Service
@@ -47,22 +48,22 @@ public class InitializerService {
         this.projects = projects;
     }
 
-    public Optional<Project> create(@NotNull Project project) {
+    public Mono<Project> create(@NotNull Project project) {
         return this.publish(project, create);
     }
 
-    public Optional<Project> update(@NotNull Project project) {
+    public Mono<Project> update(@NotNull Project project) {
         return this.publish(project, update);
     }
 
-    public Optional<Project> delete(@NotNull Project project) {
+    public Mono<Project> delete(@NotNull Project project) {
         return this.publish(project, delete);
     }
 
-    private Optional<Project> publish(@NotNull Project project, @NotNull Constants.Mode mode) {
+    private Mono<Project> publish(@NotNull Project project, @NotNull Constants.Mode mode) {
         project.setMode(mode);
-        return of(project)
-                .map(this::authenticate)
+        return just(project)
+                .flatMap(this::authenticate)
                 .map(p -> this.resolve(project, mode))
                 .map(ProjectPreEvent::new)
                 .map(this::publish)
@@ -111,18 +112,18 @@ public class InitializerService {
         throw new IllegalArgumentException("Mode not supported: "+mode);
     }
 
-    private Project authenticate(@NotNull Project project) {
-        project.setOwner(userEmail().orElseThrow());
-        project.setOwnerName(userName().orElse(null));
+    private Mono<Project> authenticate(@NotNull Project project) {
+        log.debug("user: {} in mode: {}", project.getOwner(), project.getMode());
 
-        if ( create.equals(project.getMode()) )
-            log.debug("user: {}", project.getOwner());
-        else
-            log.debug("user: {}", userEmail()
+        return userEmail()
+                .doOnNext(project::setOwner)
+                .switchIfEmpty(defer(() -> error(new IllegalArgumentException("not.account.owner"))))
+                .then(userEmail())
                 .filter(owner -> owner.equals(project.getOwner()))
-                .orElseThrow(() -> new InsufficientAuthenticationException("Action restricted to the p owner")));
-
-        return project;
+                .switchIfEmpty(defer(() -> error(new InsufficientAuthenticationException("Action restricted to the p owner"))))
+                .then(userName())
+                .doOnNext(project::setOwnerName) // null if empty
+                .then(just(project));
     }
 
     /* -- FACETS -- */

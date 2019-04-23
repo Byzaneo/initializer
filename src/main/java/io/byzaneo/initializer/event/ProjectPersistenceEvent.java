@@ -6,10 +6,10 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class ProjectPersistencyEvent extends ProjectEvent {
+public class ProjectPersistenceEvent extends ProjectEvent {
     private static final long serialVersionUID = 347944989642241480L;
 
-    public ProjectPersistencyEvent(Project project) {
+    public ProjectPersistenceEvent(Project project) {
         super(project);
     }
 }

@@ -75,7 +75,7 @@ public class InitializerService {
                 .map(this::publish)
                 .map(ProjectDeploymentEvent::new)
                 .map(this::publish)
-                .map(ProjectPersistencyEvent::new)
+                .map(ProjectPersistenceEvent::new)
                 .map(this::publish)
                 .map(ProjectPostEvent::new)
                 .map(this::publish);
@@ -147,14 +147,14 @@ public class InitializerService {
     /* -- DATA -- */
 
     @EventListener(condition = CONDITION_CREATE + " or " + CONDITION_UPDATE)
-    public void onSaveProject(@NotNull ProjectPersistencyEvent event) {
+    public void onSaveProject(@NotNull ProjectPersistenceEvent event) {
         this.projects.save(event.getProject())
                 .blockOptional(TIMEOUT)
                 .ifPresent(p -> log.info("Project saved: {}", p));
     }
 
     @EventListener(condition = CONDITION_DELETE)
-    public void onDeleteProject(@NotNull ProjectPersistencyEvent event) {
+    public void onDeleteProject(@NotNull ProjectPersistenceEvent event) {
         if ( event.getProject().getId()!=null )
             this.projects.delete(event.getProject())
                     .blockOptional(TIMEOUT)

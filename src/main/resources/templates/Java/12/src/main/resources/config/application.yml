@@ -7,7 +7,7 @@ server.port: 8080
   my.property: example
 
 spring:
-  application.name: {{project.name}}
+  application.name: ${info.project.name}
 
 byzaneo:
   billing.enabled: false

@@ -35,14 +35,14 @@ public class DockerService {
     @EventListener(condition = CONDITION_DOCKER)
     public void onInit(ProjectPreEvent event) {
         Docker docker = (Docker) event.getProject().getRegistry();
-        if ( !hasText(docker.getRegistry()) )
-            docker.setRegistry(this.defaultHostname);
+        if ( !hasText(docker.getHostname()) )
+            docker.setHostname(this.defaultHostname);
         if ( !hasText(docker.getUsername()) )
             docker.setUsername(this.defaultUsername);
         if ( !hasText(docker.getPassword()) )
             docker.setPassword(this.defaultPassword);
 
-        log.info("Docker: {}", docker.getRegistry());
+        log.info("Docker: {}", docker.getHostname());
     }
 
     /* -- PRIVATE -- */

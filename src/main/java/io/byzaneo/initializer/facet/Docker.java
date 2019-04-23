@@ -16,7 +16,7 @@ public class Docker extends Facet {
 
     public static final String FACET_ID = "Docker";
 
-    private String registry;
+    private String hostname;
     private String username;
     private String password;
 
@@ -24,9 +24,9 @@ public class Docker extends Facet {
         super(Registry, FACET_ID, "https://www.docker.com/");
     }
 
-    public Docker(String registry, String username, String password) {
+    public Docker(String hostname, String username, String password) {
         this();
-        this.registry = registry;
+        this.hostname = hostname;
         this.username = username;
         this.password = password;
     }

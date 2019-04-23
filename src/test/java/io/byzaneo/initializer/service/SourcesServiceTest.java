@@ -36,6 +36,7 @@ public class SourcesServiceTest {
 
         project = Project.builder()
                 .name("dummy")
+                .port(8080)
                 .namespace("io.byzaneo")
                 .ownerName("Tester")
                 .owner("tester@byzaneo.io")

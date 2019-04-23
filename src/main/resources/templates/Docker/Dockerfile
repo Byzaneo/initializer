@@ -7,7 +7,7 @@ ENV START_DELAY=0 \
 
 ADD ./target/*.war /app.war
 
-EXPOSE 8080
+EXPOSE {{port}}
 CMD echo "{{name}} will start in ${START_DELAY}s..." && \
     sleep ${START_DELAY} && \
     java ${JAVA_OPTS} -Djava.security.egd=file:/dev/./urandom -jar /app.war

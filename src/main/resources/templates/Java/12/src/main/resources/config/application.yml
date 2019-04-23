@@ -1,7 +1,7 @@
 info.project:
   name: {{project.name}}
 
-server.port: 8080
+server.port: {{project.port}}
 
 {{project.name}}:
   my.property: example

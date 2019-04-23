@@ -12,9 +12,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
+import javax.validation.constraints.*;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
@@ -22,6 +20,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import static java.lang.Integer.MAX_VALUE;
 import static java.nio.file.Files.createTempDirectory;
 import static java.time.Instant.now;
 import static java.util.stream.Stream.of;
@@ -55,6 +54,11 @@ public class Project {
     @NotBlank
     @Pattern(regexp = "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+[0-9a-z_]$")
     private String namespace;
+    @NonNull
+    @Builder.Default
+    @Min(80)
+    @Max(MAX_VALUE)
+    private Integer port = 80;
     private String description;
 
     // - Security -

@@ -26,7 +26,7 @@ public class {{#capitalize}}{{project.name}}{{/capitalize}}ControllerTest {
 
     private WebTestClient client;
 
-    @Value("${{openbrace}}{{project.name}}.my.property}")
+    @Value("${{openBracket}}{{project.name}}.my.property}")
     private String myProperty;
 
     @Before

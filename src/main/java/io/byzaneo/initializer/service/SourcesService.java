@@ -131,6 +131,7 @@ public class SourcesService {
         final Lambda lowercase = (fragment, writer) -> writer.write(fragment.execute().toLowerCase());
         final Lambda capitalize = (fragment, writer) -> writer.write(StringUtils.capitalize(fragment.execute()));
         final Lambda el;
+        final String openBracket = "{";
         final Map<String, Boolean> facets;
 
         Context(Project project) {

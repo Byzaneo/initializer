@@ -9,7 +9,7 @@
         "email": "{{project.owner}}"{{#facets.GitHub}},
         "repoType": "github",
         "repoProjectKey": "{{project.repository.owner}}",
-        "repoSlug": "{{project.repository.name}}",
+        "repoSlug": "{{project.repository.name}}"
 {{/facets.GitHub}}
       },
       "user": "[initializer]"

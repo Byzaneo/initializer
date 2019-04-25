@@ -19,7 +19,6 @@ import static java.lang.String.format;
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
 import static org.springframework.http.HttpHeaders.ACCEPT;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
-import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.*;
 import static org.springframework.util.StringUtils.hasText;
@@ -31,8 +30,8 @@ public class SpinnakerService {
     public static final String DEFAULT_PIPELINE = "prod";
     private static final String CONDITION_SPINNAKER = "#event.project.deployment?.id == T(io.byzaneo.initializer.facet.Spinnaker).FACET_ID";
 
-    private static final String APPLICATION_TEMPLATE = Spinnaker.FACET_ID + "/application-create.yml";
-    private static final String PIPELINE_TEMPLATE = Spinnaker.FACET_ID + "/pipeline-%s.yml";
+    private static final String APPLICATION_TEMPLATE = Spinnaker.FACET_ID + "/application-create.json";
+    private static final String PIPELINE_TEMPLATE = Spinnaker.FACET_ID + "/pipeline-%s.json";
 
     private final String api;
     private final String account;
@@ -90,7 +89,7 @@ public class SpinnakerService {
             .syncBody(this.sourcesService.transform(project, APPLICATION_TEMPLATE))
             .exchange()
             .doOnSuccess(response -> {
-                if (CREATED.equals(response.statusCode()))
+                if (OK.equals(response.statusCode()))
                     log.info("Spinnaker: {} application created", project.getName());
                 else
                     throw new InitializerException("Spinnaker: failed to create application %s (%s)",
@@ -104,7 +103,7 @@ public class SpinnakerService {
 
         this.client(spinnaker)
             .post()
-            .uri("/applications/pipelines")
+            .uri("/pipelines")
             .syncBody(this.sourcesService.transform(project, format(PIPELINE_TEMPLATE, spinnaker.getPipeline())))
             .exchange()
             .doOnSuccess(response -> {

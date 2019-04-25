@@ -14,7 +14,7 @@
     <artifactId>{{name}}</artifactId>
     <groupId>{{namespace}}</groupId>
     <version>{{management.version}}</version>
-    <packaging>war</packaging>
+    <packaging>jar</packaging>
     <name>{{#uppercase}}{{name}}{{/uppercase}}</name>
     {{#description}}
     <description>{{description}}</description>

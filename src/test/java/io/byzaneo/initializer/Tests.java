@@ -20,7 +20,7 @@ import static java.util.Comparator.reverseOrder;
 
 public abstract class Tests {
 
-    private static final String PROJECT_NAME = "dummy";
+    public static final String PROJECT_NAME = "dummy";
 
     public static Project.ProjectBuilder project() {
         return project("dummy", null);

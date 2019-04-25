@@ -1,14 +1,10 @@
 {{#project}}
-FROM openjdk:11-jre-slim
+FROM openjdk:13-alpine
 MAINTAINER {{#ownerName}}{{ownerName}}{{/ownerName}} <{{owner}}>
-
-ENV START_DELAY=0 \
-    JAVA_OPTS="--add-opens java.base/java.lang=ALL-UNNAMED"
-
-ADD ./target/*.war /app.war
-
-EXPOSE {{port}}
-CMD echo "{{name}} will start in ${START_DELAY}s..." && \
-    sleep ${START_DELAY} && \
-    java ${JAVA_OPTS} -Djava.security.egd=file:/dev/./urandom -jar /app.war
+VOLUME /tmp
+ARG DEPENDENCY=target/dependency
+COPY ${DEPENDENCY}/BOOT-INF/lib /app/lib
+COPY ${DEPENDENCY}/META-INF /app/META-INF
+COPY ${DEPENDENCY}/BOOT-INF/classes /app
+ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-cp","app:app/lib/*","{{namespace}}.{{name}}.{{#capitalize}}{{name}}{{/capitalize}}App"]
 {{/project}}

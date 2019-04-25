@@ -87,6 +87,7 @@ public class InitializerService {
         } catch (Exception e) {
             // publishes project error event
             // to be able to manage rollbacks
+            log.error("Initializer failure on event: "+event, e);
             this.publisher.publishEvent(new ProjectErrorEvent(event, e));
             throw e;
         }

@@ -59,11 +59,11 @@ public class SourcesService {
 
     /* -- PUBLIC -- */
 
-    public String transform(@NotNull final Project project,
+    String transform(@NotNull final Project project,
                           @NotNull final String template) {
         log.info("{}: {} transformation", project.getName(), template);
         try ( final Writer writer = new StringWriter() ) {
-            this.transform(new Context(project), toResource(template), writer);
+            this.transform(new Context(project), toResource(TEMPLATES_LOCATION + template), writer);
             return writer.toString();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -110,7 +110,7 @@ public class SourcesService {
     }
 
     private Resource toResource(@NotNull final String template) {
-        return of(RESOLVER.getResource(TEMPLATES_LOCATION + template))
+        return of(RESOLVER.getResource(template))
                 .filter(Resource::exists)
                 .orElseThrow(() -> new RuntimeException("Template resource not found: "+template));
     }

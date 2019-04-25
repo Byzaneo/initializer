@@ -20,21 +20,20 @@ import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.util.StringUtils.hasText;
 import static org.springframework.web.reactive.function.BodyInserters.fromObject;
 
-// TODO : remove repo not available in the code climate API
 @Slf4j
 @Service
 public class CodeClimateService {
 
     private static final String CONDITION_CODE_CLIMATE = "#event.project.quality?.id == T(io.byzaneo.initializer.facet.CodeClimate).FACET_ID";
 
-    private final String defaultToken;
-    private final String defaultApi;
+    private final String token;
+    private final String api;
 
     public CodeClimateService(
-            @Value("${initializer.codeclimate.token}") String defaultToken,
-            @Value("${initializer.codeclimate.api}") String defaultApi) {
-        this.defaultToken = defaultToken;
-        this.defaultApi = defaultApi;
+            @Value("${initializer.codeclimate.token}") String token,
+            @Value("${initializer.codeclimate.api}") String api) {
+        this.token = token;
+        this.api = api;
     }
 
     /* -- EVENTS -- */
@@ -43,15 +42,15 @@ public class CodeClimateService {
     public void onInit(ProjectPreEvent event) {
         final CodeClimate codeClimate = (CodeClimate) event.getProject().getQuality();
         if (!hasText(codeClimate.getToken()))
-            codeClimate.setToken(this.defaultToken);
+            codeClimate.setToken(this.token);
         if (!hasText(codeClimate.getApi()))
-            codeClimate.setApi(this.defaultApi);
+            codeClimate.setApi(this.api);
 
         log.info("CodeClimate: {}", codeClimate.getApi());
     }
 
     @EventListener(condition = CONDITION_CREATE + " and " + CONDITION_CODE_CLIMATE)
-    public void onInit(ProjectIntegrationEvent event) {
+    public void onActivate(ProjectIntegrationEvent event) {
         // present repository facet means a repository
         // should have been created
         if (event.getProject().getRepository() != null)

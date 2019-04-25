@@ -5,7 +5,7 @@
 
     <parent>
         <groupId>io.byzaneo</groupId>
-        <artifactId>byzaneo-one</artifactId>
+        <artifactId>byzaneo-one-starter-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
         <relativePath />
     </parent>
@@ -34,6 +34,10 @@
 {{#project.front}}
         <one.application.disabled>false</one.application.disabled>
 {{/project.front}}
+{{#facets.Docker}}
+        <docker.image.prefix>{{project.registry.imagePrefix}}</docker.image.prefix>
+        <docker.image>{{project.name}}</docker.image>
+{{/facets.Docker}}
     </properties>
 
     <dependencies>

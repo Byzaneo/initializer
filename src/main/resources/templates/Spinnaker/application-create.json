@@ -1,0 +1,20 @@
+{
+  "job": [
+    {
+      "type": "createApplication",
+      "application": {
+        "cloudProviders": "kubernetes",
+        "instancePort": {{project.port}},
+        "name": "{{project.name}}",
+        "email": "{{project.owner}}"{{#facets.GitHub}},
+        "repoType": "github",
+        "repoProjectKey": "{{project.repository.owner}}",
+        "repoSlug": "{{project.repository.name}}",
+{{/facets.GitHub}}
+      },
+      "user": "[initializer]"
+    }
+  ],
+  "application": "{{project.name}}",
+  "description": "Initializer Create Application: {{project.name}}"
+}

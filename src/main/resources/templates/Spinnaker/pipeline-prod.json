@@ -1,0 +1,86 @@
+{
+  "name":"prod",
+  "application":"{{project.name}}",
+  "index":0,
+  "keepWaitingPipelines": false,
+  "lastModifiedBy": "anonymous",
+  "limitConcurrent": true,
+  "stages": [
+    {
+      "account": "{{project.deployment.account}}",
+      "cloudProvider": "kubernetes",
+      "manifestArtifactAccount": "kubernetes",
+      "manifests": [
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "labels": {
+              "app": "{{project.name}}"
+            },
+            "name": "{{project.name}}"
+          },
+          "spec": {
+            "replicas": 1,
+            "selector": {
+              "matchLabels": {
+                "app": "{{project.name}}"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "{{project.name}}",
+                  "environment": "prod",
+                  "tier": "service"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "image": "{{project.registry.imagePrefix}}/{{project.name}}:latest",
+                    "name": "{{project.name}}",
+                    "ports": [
+                      {
+                        "containerPort": {{project.port}}
+                      }
+                    ]
+                  }
+                ],
+                "imagePullSecrets": [
+                  {
+                    "name": "{{project.registry.secret}}"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "moniker": {
+        "app": "{{project.name}}"
+      },
+      "name": "Deploy (Manifest)",
+      "refId": "1",
+      "relationships": {
+        "loadBalancers": [],
+        "securityGroups": []
+      },
+      "requisiteStageRefIds": [],
+      "skipExpressionEvaluation": false,
+      "source": "text",
+      "type": "deployManifest"
+    }
+  ],
+  "triggers": [
+    {
+      "account": "{{project.registry.secret}}",
+      "enabled": true,
+      "organization": "{{project.registry.library}}",
+      "registry": "{{project.registry.hostname}}",
+      "repository": "{{project.name}}",
+      "tag": "latest",
+      "type": "docker"
+    }
+  ]
+}

@@ -11,6 +11,7 @@ import org.springframework.util.Assert;
 
 import javax.validation.constraints.NotBlank;
 
+import static java.util.Optional.ofNullable;
 import static org.springframework.beans.factory.config.ConfigurableBeanFactory.SCOPE_PROTOTYPE;
 import static org.springframework.util.StringUtils.hasText;
 
@@ -53,5 +54,12 @@ public class GitHub extends io.byzaneo.initializer.facet.Repository {
     public String getOwner() {
         Assert.isTrue(hasText(organization) || hasText(username), "GitHub repository organization or username is required");
         return hasText(organization) ? organization : username;
+    }
+
+    @Override
+    public String getCloneUrl() {
+        return ofNullable(this.repository)
+                .map(Repository::getCloneUrl)
+                .orElse(null);
     }
 }

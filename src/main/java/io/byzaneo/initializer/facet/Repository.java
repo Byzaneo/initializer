@@ -40,4 +40,9 @@ public abstract class Repository extends Facet {
      */
     @JsonIgnore
     public abstract String getSlug();
+
+    /**
+     * @return the clone URL of this repository
+     */
+    public abstract String getCloneUrl();
 }

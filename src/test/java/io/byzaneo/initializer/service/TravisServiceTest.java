@@ -5,9 +5,8 @@ import io.byzaneo.initializer.event.ProjectIntegrationEvent;
 import io.byzaneo.initializer.event.ProjectPostEvent;
 import io.byzaneo.initializer.event.ProjectPreEvent;
 import io.byzaneo.initializer.event.ProjectRepositoryEvent;
-import io.byzaneo.initializer.facet.Docker;
 import io.byzaneo.initializer.facet.Java;
-import io.byzaneo.initializer.service.SourcesService.Context;
+import io.byzaneo.initializer.facet.Travis;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,17 +16,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.concurrent.atomic.AtomicInteger;
-
+import static io.byzaneo.initializer.Tests.project;
 import static io.byzaneo.initializer.service.SourcesService.EL;
 import static io.byzaneo.initializer.service.SourcesService.EL_CONTEXT;
 import static io.byzaneo.one.Constants.PROFILE_TEST;
-import static java.nio.file.Files.*;
-import static java.util.Comparator.reverseOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -39,8 +31,6 @@ public class TravisServiceTest {
     @Autowired
     private SourcesService sourcesService;
     @Autowired
-    private GitHubService githubService;
-    @Autowired
     private TravisService service;
     @Value("${initializer.github.organization}")
     private String organization;
@@ -49,28 +39,10 @@ public class TravisServiceTest {
     private Project project;
 
     @Before
-    public void before() throws IOException {
-        final Path dir = Paths.get("C:\\Temp\\travis");
-        if ( isDirectory(dir) )
-            walk(dir)
-                .sorted(reverseOrder())
-                .map(Path::toFile)
-                .forEach(File::delete);
-
-        final String name = "dummy";
-        this.project = Project.builder()
-                .name(name)
-                .namespace("io.byzaneo")
-                .ownerName("Tester")
-                .owner("tester@byzaneo.io")
-                .registry(new Docker("my.registry", "me", "secret"))
-                .directory(dir)
-                .build();
-
-        // init default values
-        final ProjectPreEvent event = new ProjectPreEvent(project);
-        this.githubService.onInit(event);
-        this.service.onInit(event);
+    public void before() {
+        // needs project git repository created
+        this.project = project("travis").build();
+        this.service.onInit(new ProjectPreEvent(this.project));
     }
 
     @Test
@@ -81,14 +53,13 @@ public class TravisServiceTest {
     }
 
     @Test
-    public void sources() throws IOException {
-        this.sourcesService.generateSources(new Context(project), "Travis");
-
-        final AtomicInteger count = new AtomicInteger();
-        walk(project.getDirectory())
-                .peek(System.out::println)
-                .forEach(p -> {count.incrementAndGet(); assertTrue(exists(p));});
-        assertEquals(3, count.get());
+    public void sources() {
+        final String travis = this.sourcesService.transform(project, Travis.FACET_ID + "/.travis.yml");
+        //System.out.println(travis);
+        assertTrue(travis.startsWith("language: java\r\njdk: openjdk12"));
+        assertTrue(travis.contains("- docker"));
+        assertTrue(travis.contains("- mvn package -U -B -P prod,coverage"));
+        assertTrue(travis.contains("- bash <(curl -s https://codecov.io/bash)"));
     }
 
     @Test

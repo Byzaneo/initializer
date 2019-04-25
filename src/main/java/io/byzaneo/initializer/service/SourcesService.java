@@ -17,11 +17,11 @@ import org.springframework.expression.spel.support.SimpleEvaluationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import javax.validation.constraints.NotNull;
 import java.io.*;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import static io.byzaneo.initializer.service.InitializerService.CONDITION_CREATE;
@@ -32,17 +32,22 @@ import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Files.newBufferedWriter;
 import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
+import static java.util.Optional.of;
 import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
+import static org.springframework.util.ResourceUtils.CLASSPATH_URL_PREFIX;
 
 @Slf4j
 @Service
 public class SourcesService {
 
-    private static final Mustache.Compiler MUSTACHE = Mustache.compiler();
+    // locate
+    private static final String TEMPLATES_LOCATION = CLASSPATH_URL_PREFIX + "/templates/";
     private static final PathMatchingResourcePatternResolver RESOLVER = new PathMatchingResourcePatternResolver();
+    // transform
+    private static final Mustache.Compiler MUSTACHE = Mustache.compiler();
+    // resolve
     static final ExpressionParser EL = new SpelExpressionParser();
     static final EvaluationContext EL_CONTEXT = SimpleEvaluationContext.forReadOnlyDataBinding().build();
-
 
     /* -- EVENTS -- */
 
@@ -52,29 +57,39 @@ public class SourcesService {
         generateSources(event.getProject());
     }
 
+    /* -- PUBLIC -- */
+
+    public String transform(@NotNull final Project project,
+                          @NotNull final String template) {
+        log.info("{}: {} transformation", project.getName(), template);
+        try ( final Writer writer = new StringWriter() ) {
+            this.transform(new Context(project), toResource(template), writer);
+            return writer.toString();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     /* -- PRIVATE -- */
 
     private void generateSources(Project project) {
         final Context context = new Context(project);
         project.facets()
-                .filter(f -> f.getTemplatesLocation()!=null)
-                .forEach(facet -> generateSources(context, facet));
+            .filter(f -> f.getTemplatesLocation()!=null)
+            .forEach(facet -> generateSources(context, facet));
         // README
         this.generateSources(context, "Readme");
     }
 
     private void generateSources(final Context context, final Facet facet) {
-        generateSources(context, facet.getTemplatesLocation());
+        this.generateSources(context, facet.getTemplatesLocation());
     }
 
-    void generateSources(final Context context, final String templatesLocation) {
+    private void generateSources(final Context context, final String templatesLocation) {
         log.info("{}: {} sources generation", context.project.getName(), templatesLocation);
         final Path directory = context.project.getDirectory();
-        final String templateLocation = "classpath:/templates/"+ templatesLocation +"/";
-        final String root = Optional.of(RESOLVER.getResource(templateLocation))
-                    .filter(Resource::exists)
-                    .map(this::resourcePath)
-                    .orElseThrow(() -> new RuntimeException("Source templates not found at "+templateLocation));
+        final String templateLocation = TEMPLATES_LOCATION + templatesLocation +"/";
+        final String root = this.resourcePath(this.toResource(templateLocation));
 
         try (final Stream<Resource> templates =
                      stream(RESOLVER.getResources(templateLocation + "**/*"))) {
@@ -94,6 +109,12 @@ public class SourcesService {
         }
     }
 
+    private Resource toResource(@NotNull final String template) {
+        return of(RESOLVER.getResource(TEMPLATES_LOCATION + template))
+                .filter(Resource::exists)
+                .orElseThrow(() -> new RuntimeException("Template resource not found: "+template));
+    }
+
     private Path createParentDirectories(Path path) {
         try {
             createDirectories(path.getParent());
@@ -111,9 +132,16 @@ public class SourcesService {
         }
     }
 
-    private void transform(Object context, Resource template, Path destination) {
-        try (final Reader reader = new BufferedReader(new InputStreamReader(template.getInputStream(), UTF_8));
-             final Writer writer = newBufferedWriter(destination, UTF_8)) {
+    private void transform(Context context, Resource template, Path destination) {
+        try (final BufferedWriter writer = newBufferedWriter(destination, UTF_8)) {
+            this.transform(context, template, writer);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private void transform(Object context, Resource template, Writer writer) {
+        try (final Reader reader = new BufferedReader(new InputStreamReader(template.getInputStream(), UTF_8))) {
             MUSTACHE.compile(reader).execute(context, writer);
         } catch (RuntimeException re) {
             log.error("Error transforming template {}", template);
@@ -131,7 +159,6 @@ public class SourcesService {
         final Lambda lowercase = (fragment, writer) -> writer.write(fragment.execute().toLowerCase());
         final Lambda capitalize = (fragment, writer) -> writer.write(StringUtils.capitalize(fragment.execute()));
         final Lambda el;
-        final String openBracket = "{";
         final Map<String, Boolean> facets;
 
         Context(Project project) {

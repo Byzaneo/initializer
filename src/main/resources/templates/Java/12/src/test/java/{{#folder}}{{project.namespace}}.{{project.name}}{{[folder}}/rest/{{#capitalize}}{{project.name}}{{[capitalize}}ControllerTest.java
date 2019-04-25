@@ -26,9 +26,6 @@ public class {{#capitalize}}{{project.name}}{{/capitalize}}ControllerTest {
 
     private WebTestClient client;
 
-    @Value("${{openBracket}}{{project.name}}.my.property}")
-    private String myProperty;
-
     @Before
     public void setUp() {
         this.client = WebTestClient
@@ -57,10 +54,5 @@ public class {{#capitalize}}{{project.name}}{{/capitalize}}ControllerTest {
                 .expectStatus().isOk()
                 .expectBody(String.class)
                 .isEqualTo("Hello "+WithMockToken.TESTER_EMAIL);
-    }
-
-    @Test
-    public void testMyProperty() {
-        assertEquals("example", myProperty);
     }
 }

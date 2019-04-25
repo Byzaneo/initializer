@@ -3,9 +3,6 @@ info.project:
 
 server.port: {{project.port}}
 
-{{project.name}}:
-  my.property: example
-
 spring:
   application.name: ${info.project.name}
 

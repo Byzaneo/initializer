@@ -1,5 +1,6 @@
 package io.byzaneo.initializer.service;
 
+import io.byzaneo.initializer.Tests;
 import io.byzaneo.initializer.bean.Project;
 import io.byzaneo.initializer.data.ProjectRepository;
 import io.byzaneo.one.test.ReactiveMongoCleanupRule;
@@ -33,10 +34,7 @@ public class GitHubServiceTest {
     @Test
     @WithMockToken
     public void create() {
-        this.service.create(Project.builder()
-                .name("dummy")
-                .namespace("io.byzaneo")
-                .build());
+        this.service.create(Tests.project().build());
     }
 
 }

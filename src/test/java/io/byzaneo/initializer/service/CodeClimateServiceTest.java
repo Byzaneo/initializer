@@ -1,5 +1,6 @@
 package io.byzaneo.initializer.service;
 
+import io.byzaneo.initializer.Tests;
 import io.byzaneo.initializer.bean.Project;
 import io.byzaneo.initializer.event.ProjectIntegrationEvent;
 import io.byzaneo.initializer.event.ProjectPreEvent;
@@ -19,29 +20,19 @@ import static io.byzaneo.one.Constants.PROFILE_TEST;
 public class CodeClimateServiceTest {
 
     @Autowired
-    private GitHubService githubService;
-    @Autowired
     private CodeClimateService service;
 
     private Project project;
 
     @Before
     public void before() throws Exception {
-        this.project = Project.builder()
-                .name("dummy")
-                .namespace("io.byzaneo")
-                .registry(null)
-                .coverage(null)
-                .build();
-
-        // init default values
-        final ProjectPreEvent event = new ProjectPreEvent(project);
-        this.githubService.onInit(event);
-        this.service.onInit(event);
+        // needs project git repository created
+        this.project = Tests.project().build();
+        this.service.onInit(new ProjectPreEvent(project));
     }
 
     @Test
     public void activate() {
-        this.service.onInit(new ProjectIntegrationEvent(project));
+        this.service.onActivate(new ProjectIntegrationEvent(project));
     }
 }

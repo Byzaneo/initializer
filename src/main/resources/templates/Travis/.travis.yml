@@ -13,13 +13,6 @@ cache:
     - "$HOME/.m2/repository"
 {{/facets.Maven}}
 
-env:
-  global:
-{{#facets.Docker}}
-    - TAG=latest
-    - IMAGE_NAME=$REGISTRY_HOSTNAME/$PROJECT_NAME
-{{/facets.Docker}}
-
 install: true
 
 script:
@@ -32,14 +25,6 @@ after_success:
   - bash <(curl -s https://codecov.io/bash)
 {{/facets.CodeCov}}
 
-{{#facets.Docker}}
-before_deploy:
-  - docker login -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD $REGISTRY_HOSTNAME
-  - docker pull "$IMAGE_NAME" || true
-  - docker build --pull --cache-from "$IMAGE_NAME" --tag "$IMAGE_NAME" .
-  - docker images
-  - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:${TAG}"
-{{/facets.Docker}}
 deploy:
   skip_cleanup: true
   provider: script

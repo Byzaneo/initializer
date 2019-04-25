@@ -1,5 +1,6 @@
 package io.byzaneo.initializer.event;
 
+import io.byzaneo.initializer.Constants;
 import io.byzaneo.initializer.bean.Project;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -22,8 +23,8 @@ public abstract class ProjectEvent extends ApplicationEvent {
                 .toLowerCase();
     }
 
-    public String getMode() {
-        return this.getProject().getMode().toString();
+    public Constants.Mode getMode() {
+        return this.getProject().getMode();
     }
 
     public Project getProject() {
@@ -33,4 +34,5 @@ public abstract class ProjectEvent extends ApplicationEvent {
     public Instant getDate() {
         return Instant.ofEpochMilli(this.getTimestamp());
     }
+
 }

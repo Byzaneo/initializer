@@ -38,6 +38,12 @@
               "spec": {
                 "containers": [
                   {
+                    "env": [
+                      {
+                        "name": "SPRING_PROFILES_ACTIVE",
+                        "value": "prod"
+                      }
+                    ],
                     "image": "{{project.registry.imagePrefix}}/{{project.name}}:latest",
                     "name": "{{project.name}}",
                     "ports": [

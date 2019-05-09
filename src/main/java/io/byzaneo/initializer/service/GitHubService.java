@@ -23,6 +23,7 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -146,17 +147,21 @@ public class GitHubService {
     /* - ERROR - */
 
     @EventListener(condition = CONDITION_CREATE)
-    public void onCreationError(ProjectErrorEvent error) {
+    public void onCreationError(ProjectErrorEvent event) {
         try {
-            this.delete((GitHub) error.getProject().getRepository());
+            // Avoids to delete existing repository
+            Throwable cause = event.getError().getCause();
+            if (!(cause instanceof RequestException
+                    && HttpStatus.UNPROCESSABLE_ENTITY.value() == ((RequestException) cause).getStatus()))
+            this.delete((GitHub) event.getProject().getRepository());
         } catch (IOException e) {
             log.error("Rollback error while deleting GitHub repository", e);
         }
     }
 
     @EventListener(condition = CONDITION_UPDATE)
-    public void onUpdateError(ProjectErrorEvent error) {
-        final Git git = error.getProject().getRepository().getGit();
+    public void onUpdateError(ProjectErrorEvent event) {
+        final Git git = event.getProject().getRepository().getGit();
         try {
             // removes update branch
             final String branch = git.getRepository().getBranch();
@@ -165,7 +170,7 @@ public class GitHubService {
                 git.branchDelete()
                         .setBranchNames(branch)
                         .call();
-                this.push(error.getProject().getRepository(), git);
+                this.push(event.getProject().getRepository(), git);
             }
         } catch (IOException | GitAPIException e) {
             log.error("Rollback error while deleting GitHub pull request", e);
